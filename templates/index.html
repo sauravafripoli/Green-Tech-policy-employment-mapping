@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Africa Climate Policy Map</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <h2>Africa Climate Policy Map</h2>
+
+  <div id="filters">
+    <div>
+      <label for="focusFilter">Filter by Focus Area:</label>
+      <select id="focusFilter">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="classFilter">Filter by Policy Class:</label>
+      <select id="classFilter">
+        <option value="all">All</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="map-and-sidebar-container">
+    <div id="map"></div>
+
+    <div id="sidebar">
+      <h3 id="sidebar-title">Click a country</h3>
+      <div id="document-list"></div>
+    </div>
+  </div>
+
+  <div id="doc-details">
+    <h4 id="doc-title">Select a document to see details</h4>
+    <div id="doc-charts"></div>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="{{ url_for('static', filename='js/africa_map.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8fafc;
+  color: #334155;
+  line-height: 1.6;
+}
+
+/* Headings (no change) */
+h2 {
+  text-align: center;
+  margin: 2rem 0 1.5rem;
+  color: #1e293b;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+h3 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+h4 {
+  color: #1e293b;
+  font-size: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+/* Filter Section - Adjusted */
+#filters {
+  display: flex;
+  flex-wrap: wrap;           /* Allows items to wrap to the next line on smaller screens */
+  justify-content: center;
+  align-items: center;
+  gap: 20px;                 /* Slightly reduced gap between filter groups */
+  margin: 0 auto 1.5rem auto; /* Center the filter container horizontally */
+  padding: 1rem 20px;        /* Added horizontal padding to prevent content touching edges */
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 95%;                /* Use a percentage width */
+  max-width: 1400px;         /* Max width to align with main content sections */
+  box-sizing: border-box;    /* Ensures padding is included in the element's total width */
+}
+
+#filters div { /* Container around each label/select pair */
+  display: flex;
+  align-items: center;
+  gap: 8px;                  /* Slightly reduced gap between label and select */
+}
+
+#filters label {
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+select {
+  padding: 0.6rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #334155;
+  background-color: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  min-width: 120px;          /* Slightly reduced min-width to allow more flexibility */
+  max-width: 200px;          /* Added a max-width to prevent them from becoming too wide */
+  flex-grow: 1;              /* Allow select to grow and fill available space */
+}
+
+select:hover {
+  border-color: #94a3b8;
+}
+
+select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Main Map AND Sidebar Section */
+#map-and-sidebar-container { /* Renamed from #main-content-container */
+  display: flex;
+  height: calc(100vh - 250px); /* Adjusted height to accommodate the fixed header/filters better */
+  max-height: 800px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0 auto;
+  width: 95%;
+  max-width: 1400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background-color: #ffffff;
+}
+
+/* Map Container */
+#map {
+  flex: 2; /* Takes 2 parts of the available space */
+  background-color: #f0f4f8;
+  border-right: 1px solid #e2e8f0; /* Separator for sidebar */
+  display: flex; /* Use flex to center SVG if needed */
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Important for map pan/zoom */
+}
+
+#map svg {
+  display: block; /* Remove extra space below SVG */
+  margin: auto; /* Center SVG within its container */
+}
+
+/* Country Paths in SVG */
+.country {
+  stroke: #ffffff; /* Default stroke color */
+  stroke-width: 0.75px; /* Slightly thinner default stroke */
+  cursor: pointer;
+  transition: fill 0.3s ease-in-out; /* Smooth transition for fill color changes */
+}
+
+.country:hover {
+  fill: #89560a; /* Lighter fill color on hover */
+}
+
+/* Sidebar */
+#sidebar {
+  flex: 1; /* Takes 1 part of the available space */
+  padding: 1.5rem; /* More internal padding */
+  overflow-y: auto; /* Scroll for long lists */
+  background-color: #ffffff; /* White background */
+  box-sizing: border-box; /* Include padding in width calculation */
+}
+
+#sidebar-title {
+  font-size: 1.3rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0; /* Separator below title */
+  padding-bottom: 0.5rem;
+}
+
+#document-list ul {
+  list-style: none; /* Remove bullet points */
+  padding: 0;
+  margin: 0;
+}
+
+#document-list li {
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 5px;
+  background-color: #f8fafc; /* Light background for list items */
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+#document-list li:hover {
+  background-color: #f1b434; /* Lighter yellow on hover */
+  border-color: #f1b434; /* Matching border color */
+  color: #334155;
+}
+
+#document-list p {
+  color: #64748b;
+  font-style: italic;
+  margin-top: 1rem;
+}
+
+/* Document Insight Panel */
+#doc-details {
+  padding: 1.5rem; /* More padding */
+  margin-top: 1.5rem; /* Space between map/sidebar and this panel */
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Similar shadow to main section */
+  margin-left: auto; /* Center it */
+  margin-right: auto;
+  width: 95%; /* Match width of main section */
+  max-width: 1400px; /* Match max-width of main section */
+}
+
+#doc-title {
+  color: #1e293b;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+  font-size: 1.4rem;
+}
+
+#doc-charts {
+  display: flex; /* Keep flex for charts */
+  flex-wrap: wrap;
+  gap: 1.5rem; /* More space between chart cards */
+  margin-top: 0; /* Adjust margin as needed */
+}
+
+/* Individual chart/badge containers within #doc-charts */
+#doc-charts > div {
+  background: #fdfdfe; /* Slightly off-white for cards */
+  border-radius: 10px; /* Softer rounded corners */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Softer shadow for cards */
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column; /* Stack content vertically */
+  align-items: flex-start;
+  min-width: 220px; /* Ensure a minimum width */
+  flex-grow: 1; /* Allow cards to grow if space available */
+  border-left: 5px solid #6366f1; /* Primary color accent border */
+  box-sizing: border-box; /* Include padding and border in width */
+}
+
+#doc-charts > div h4 {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+/* Badges for youth, women, disability */
+#doc-charts span {
+  display: inline-flex; /* Use flex for icon and text alignment */
+  align-items: center;
+  gap: 6px; /* Space between text and icon */
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px; /* More rounded, pill-like */
+  margin: 4px 6px 4px 0; /* Better spacing between badges */
+  font-size: 0.875rem; /* Slightly larger font */
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); /* More visible inset shadow */
+  white-space: nowrap; /* Prevent text wrapping inside badge */
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95); /* Slightly transparent white */
+  padding: 12px 15px; /* More padding */
+  border: 1px solid #cbd5e1;
+  border-radius: 8px; /* Rounded corners */
+  pointer-events: none;
+  font-size: 0.9rem; /* Slightly smaller font */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Softer shadow */
+  max-width: 300px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.tooltip strong {
+  font-size: 1.1rem;
+  color: #1e293b;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.tooltip b {
+  color: #475569;
+}
+
+.tooltip ul {
+  list-style: disc; /* Keep disc for list of documents */
+  margin: 8px 0 0 20px; /* Adjust margin */
+  padding: 0;
+}
+
+.tooltip li {
+  margin-bottom: 3px;
+}
