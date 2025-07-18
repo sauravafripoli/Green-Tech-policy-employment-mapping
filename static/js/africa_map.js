@@ -237,15 +237,8 @@ function drawMap() {
                 tooltipHtml += `
                     <b>Matched Focus Area:</b> ${selectedFocus === "all" ? "<i>All</i>" : (allFocus.includes(selectedFocus) ? selectedFocus : "<i>None</i>")}<br/>
                     <b>Matched Policy Class:</b> ${selectedClass === "all" ? "<i>All</i>" : (allClasses.includes(selectedClass) ? selectedClass : "<i>None</i>")}<br/>
-                    <b>Matched Documents:</b> ${matchedDocsCount}
-                    ${
-                      matchedDocsCount > 0
-                        ? `<ul style="margin:4px 0 0 15px;">
-                            ${allDocs.filter((d_item,i_idx) => filterMatches(details["Focus areas"][i_idx], selectedFocus) && filterMatches(details["Policy class"][i_idx], selectedClass)).slice(0, 5).map(d_map => `<li>${d_map}</li>`).join("")}
-                            ${matchedDocsCount > 5 ? "<li>...</li>" : ""}
-                          </ul>`
-                        : ""
-                    }
+                    <b>Matched Actions:</b> ${matchedDocsCount}
+                    <br/>
                     <b>Total Documents:</b> ${[...new Set(allDocs)].length}
                 `;
             } else { // currentMapView === 'region'
