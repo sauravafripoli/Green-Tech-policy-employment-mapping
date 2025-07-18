@@ -17,230 +17,438 @@ const tooltip = d3.select("body").append("div")
   .style("opacity", 0);
 
 let countryPaths, dataMap = {}, selectedFocus = "all", selectedClass = "all";
+let currentMapView = 'country'; // 'country' or 'region'
+let regionGeoData = null; // Aggregated GeoJSON for regions
+let regionDataMap = {};   // Aggregated policy data for regions
+
+// --- Declare geoData and policyData globally ---
+let geoData = null;
+let policyData = null;
+
+// --- IMPORTANT: DEFINING  REGIONS HERE ---
+const regionDefinitions = {
+    "North Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
+    "West Africa": ["Benin", "Burkina Faso", "Cabo Verde", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
+    "Central Africa": ["Burundi", "Cameroon", "Central African Republic", "Chad", "Congo, Dem. Rep.", "Congo, Rep.", "Equatorial Guinea", "Gabon", "Sao Tome and Principe"],
+    "East Africa": ["Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Mauritius", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda"],
+    "Southern Africa": ["Angola", "Botswana", "Eswatini", "Lesotho", "Malawi", "Mozambique", "Namibia", "South Africa", "Zambia", "Zimbabwe"],
+};
+
+
+// --- HELPER FUNCTION for single-select filter matching ---
+const filterMatches = (itemValue, selectedFilterValue) => {
+    if (selectedFilterValue === "all") {
+        return true;
+    }
+    if (Array.isArray(itemValue)) {
+        return itemValue.includes(selectedFilterValue);
+    }
+    return itemValue === selectedFilterValue;
+};
+
+
+// --- GLOBAL HELPER FUNCTION: getBadge ---
+const getBadge = (label, hasYes) => {
+    return `<span style="
+      background: ${hasYes ? '#dcfce7' : '#fee2e2'};
+      color: ${hasYes ? '#15803d' : '#b91c1c'};
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 16px;
+      margin: 4px 6px 0 0;
+      display: inline-block;
+      font-size: 0.85rem;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    ">${label}: ${hasYes ? '✔️' : '❌'}</span>`;
+  };
+
+const hasYes = arr => arr.some(v => v === "Yes");
+
+
+// Prepare Regional Data and GeoJSON 
+function prepareRegionalData(allGeoData, allPolicyData) {
+    // 1. Aggregate Policy Data
+    Object.keys(regionDefinitions).forEach(regionName => {
+        const countriesInRegion = regionDefinitions[regionName];
+        const aggregatedRegionDetails = {
+            "Government document": [],
+            "Focus areas": new Set(),
+            "Policy class": new Set(),
+            "action or strategy": new Set(),
+            "Policy promotes youth employment": false,
+            "Policy promotes women employment": false,
+            "policy promotes employment of people with disabilities": false,
+            "total_documents": 0,
+            "countries": []
+        };
+
+        countriesInRegion.forEach(countryName => {
+            const countryDetails = dataMap[countryName];
+            if (countryDetails) {
+                aggregatedRegionDetails["Government document"].push(...countryDetails["Government document"]);
+                countryDetails["Focus areas"].forEach(f => aggregatedRegionDetails["Focus areas"].add(f));
+                countryDetails["Policy class"].forEach(c => aggregatedRegionDetails["Policy class"].add(c));
+                countryDetails["action or strategy"].forEach(a => aggregatedRegionDetails["action or strategy"].add(a));
+                
+                if (countryDetails["Policy promotes youth employment"] === "Yes") aggregatedRegionDetails["Policy promotes youth employment"] = true;
+                if (countryDetails["Policy promotes women employment"] === "Yes") aggregatedRegionDetails["Policy promotes women employment"] = true;
+                if (countryDetails["policy promotes employment of people with disabilities"] === "Yes") aggregatedRegionDetails["policy promotes employment of people with disabilities"] = true;
+                
+                aggregatedRegionDetails["total_documents"] += countryDetails["Government document"].length;
+                aggregatedRegionDetails["countries"].push(countryName);
+            }
+        });
+
+        // Convert Sets back to Arrays and boolean flags to "Yes"/"No"
+        aggregatedRegionDetails["Focus areas"] = Array.from(aggregatedRegionDetails["Focus areas"]);
+        aggregatedRegionDetails["Policy class"] = Array.from(aggregatedRegionDetails["Policy class"]);
+        aggregatedRegionDetails["action or strategy"] = Array.from(aggregatedRegionDetails["action or strategy"]);
+        
+        aggregatedRegionDetails["Policy promotes youth employment"] = aggregatedRegionDetails["Policy promotes youth employment"] ? "Yes" : "No";
+        aggregatedRegionDetails["Policy promotes women employment"] = aggregatedRegionDetails["Policy promotes women employment"] ? "Yes" : "No";
+        aggregatedRegionDetails["policy promotes employment of people with disabilities"] = aggregatedRegionDetails["policy promotes employment of people with disabilities"] ? "Yes" : "No";
+
+        regionDataMap[regionName] = aggregatedRegionDetails;
+    });
+
+    // 2. Aggregate GeoJSON (Requires full topojson library, assuming allGeoData is a GeoJSON FeatureCollection)
+    if (allGeoData.type === "FeatureCollection" && allGeoData.features && typeof topojson !== 'undefined' && typeof topojson.topology === 'function') {
+        const mergedFeatures = [];
+        Object.keys(regionDefinitions).forEach(regionName => {
+            const countriesInRegion = regionDefinitions[regionName];
+            
+            const countryFeatures = allGeoData.features.filter(f =>
+                countriesInRegion.includes(f.properties.name) && f.geometry
+            );
+            
+            if (countryFeatures.length > 0) {
+                try {
+                    const tempTopology = topojson.topology({ 
+                        collection: { type: "FeatureCollection", features: countryFeatures } 
+                    }); 
+                    
+                    if (tempTopology.objects && tempTopology.objects.collection && tempTopology.objects.collection.geometries) {
+                        const mergedGeometry = topojson.merge(tempTopology, tempTopology.objects.collection.geometries);
+
+                        mergedFeatures.push({
+                            type: "Feature",
+                            geometry: mergedGeometry,
+                            properties: { name: regionName }
+                        });
+                    } else {
+                        console.warn(`WARNING: Topology for region ${regionName} (Countries: ${countriesInRegion.join(', ')}) did not produce expected 'objects.collection.geometries' structure. Topology output:`, tempTopology);
+                    }
+                } catch (e) {
+                    console.error(`ERROR during topojson.topology/merge for region ${regionName} (Countries: ${countriesInRegion.join(', ')}):`, e);
+                }
+            } else {
+                console.warn(`WARNING: No valid GeoJSON features found for region ${regionName} to merge.`);
+            }
+        });
+        regionGeoData = { type: "FeatureCollection", features: mergedFeatures };
+    } else {
+        console.warn("GeoData is not a GeoJSON FeatureCollection or topojson.topology function is missing. Regional shapes cannot be merged. Display might be affected.");
+        regionGeoData = { type: "FeatureCollection", features: [] }; 
+    }
+}
+
+
+function drawMap() {
+    svg.selectAll("path").remove(); // Clear existing map paths
+
+    let dataToDraw;
+    let dataMapToUse; // Reference to either dataMap (countries) or regionDataMap
+
+    if (currentMapView === 'country') {
+        dataToDraw = geoData.features;
+        dataMapToUse = dataMap;
+        d3.select("#focusFilter").property("disabled", false);
+        d3.select("#classFilter").property("disabled", false);
+    } else { // 'region' view
+        dataToDraw = regionGeoData.features;
+        dataMapToUse = regionDataMap;
+        d3.select("#focusFilter").property("disabled", true);
+        d3.select("#classFilter").property("disabled", true);
+        d3.select("#focusFilter").property("value", "all");
+        d3.select("#classFilter").property("value", "all");
+        selectedFocus = "all";
+        selectedClass = "all";
+    }
+
+    countryPaths = svg.selectAll("path")
+        .data(dataToDraw, d => d.properties.name) // Use d.properties.name as key for join
+        .enter().append("path")
+        .attr("class", "map-entity") // Generic class for both countries/regions
+        .attr("fill", d => dataMapToUse[d.properties.name] && dataMapToUse[d.properties.name]["Government document"].length > 0 ? "#9fa8da" : "#e5e7eb")
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", 1)
+        .attr("d", path)
+        .on("mouseover", function(event, d) {
+            const name = d.properties.name;
+            const details = dataMapToUse[name];
+            if (!details) return;
+
+            // Store original fill and apply hover fill
+            d3.select(this).attr("data-original-fill", d3.select(this).attr("fill"));
+            d3.select(this).attr("fill", "#89560a"); 
+
+            const originalTransform = d3.select(this).attr("transform") || "";
+            d3.select(this)
+                .attr("stroke", "#374151")
+                .attr("stroke-width", 1.5)
+                .each(function() { 
+                    const bbox = this.getBBox();
+                    const centroidX = bbox.x + bbox.width / 2;
+                    const centroidY = bbox.y + bbox.height / 2;
+                    const scaleFactor = 1.05;
+                    d3.select(this)
+                      .transition()
+                      .duration(100)
+                      .attr("transform", `translate(${centroidX * (1 - scaleFactor)}, ${centroidY * (1 - scaleFactor)}) scale(${scaleFactor})`);
+                });
+
+            let tooltipHtml = `<strong>${name}</strong><br/>`;
+
+            if (currentMapView === 'country') {
+                const allFocus = [...new Set(details["Focus areas"])];
+                const allClasses = [...new Set(details["Policy class"])];
+                const allDocs = details["Government document"];
+
+                const matchesFocus = selectedFocus === "all" || allFocus.includes(selectedFocus);
+                const matchesClass = selectedClass === "all" || allClasses.includes(selectedClass);
+
+                const matchedDocsCount = allDocs.filter((doc, i) =>
+                    filterMatches(details["Focus areas"][i], selectedFocus) &&
+                    filterMatches(details["Policy class"][i], selectedClass)
+                ).length;
+
+                tooltipHtml += `
+                    <b>Matched Focus Area:</b> ${selectedFocus === "all" ? "<i>All</i>" : (allFocus.includes(selectedFocus) ? selectedFocus : "<i>None</i>")}<br/>
+                    <b>Matched Policy Class:</b> ${selectedClass === "all" ? "<i>All</i>" : (allClasses.includes(selectedClass) ? selectedClass : "<i>None</i>")}<br/>
+                    <b>Matched Actions:</b> ${matchedDocsCount}
+                    <br/>
+                    <b>Total Documents:</b> ${[...new Set(allDocs)].length}
+                `;
+            } else { // currentMapView === 'region'
+                const displayedCountries = details.countries.join(', ');
+                const displayedTotalDocs = [...new Set(details["Government document"])].length;
+
+                tooltipHtml += `
+                    <b>Countries:</b> ${displayedCountries}<br/>
+                    <b>Total Documents:</b> ${displayedTotalDocs}
+                    <br/>
+                    <b>Top Policy Classes:</b> ${details["Policy class"].slice(0, 3).join(", ") || "<i>None</i>"}<br/>
+                    <b>Top Focus Areas:</b> ${details["Focus areas"].slice(0, 3).join(", ") || "<i>None</i>"}
+                `;
+            }
+
+            tooltip.transition().duration(200).style("opacity", 0.95);
+            tooltip.html(tooltipHtml)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 40) + "px");
+
+        })
+        .on("mouseout", function(event, d) {
+            // Restore original fill
+            d3.select(this).attr("fill", d3.select(this).attr("data-original-fill"));
+
+            const originalTransform = d3.select(this).attr("data-original-transform") || "";
+            d3.select(this)
+              .attr("stroke", "#ffffff")
+              .attr("stroke-width", 1)
+              .transition()
+              .duration(100)
+              .attr("transform", originalTransform);
+            tooltip.transition().duration(300).style("opacity", 0);
+        })
+        .on("click", (event, d) => {
+            const name = d.properties.name;
+            const details = dataMapToUse[name];
+
+            resetSidebarAndDetails(); 
+
+            if (!details || details["Government document"].length === 0) {
+                d3.select("#sidebar-title").text(`No Data for ${name}`);
+                d3.select("#document-list").html("<p>No policy data available.</p>");
+                return;
+            }
+
+            if (currentMapView === 'country') {
+                // --- COUNTRY VIEW CLICK LOGIC ---
+                d3.select("#sidebar-title").text(`Documents for ${name}`);
+                const allDocs = details["Government document"];
+                const focusList = details["Focus areas"];
+                const classList = details["Policy class"];
+
+                const matchedDocs = allDocs.filter((doc, i) =>
+                    filterMatches(focusList[i], selectedFocus) && 
+                    filterMatches(classList[i], selectedClass)
+                );
+                const uniqueDocs = [...new Set(matchedDocs)];
+
+                const listContainer = d3.select("#document-list");
+                if (uniqueDocs.length === 0) {
+                    listContainer.append("p").text("No matching documents.");
+                } else {
+                    listContainer.append("p")
+                    .style("margin-bottom", "0.5rem")
+                    .style("font-weight", "bold")
+                    .text(`${uniqueDocs.length} unique matching document${uniqueDocs.length > 1 ? "s" : ""}:`);
+
+                    const ul = listContainer.append("ul");
+                    uniqueDocs.forEach(doc => {
+                        ul.append("li")
+                        .text(doc)
+                        .style("cursor", "pointer")
+                        .on("click", () => showDocDetails(doc, details, selectedFocus, selectedClass)); 
+                    });
+
+                }
+            } else { // currentMapView === 'region'
+                // --- REGION VIEW CLICK LOGIC ---
+                d3.select("#sidebar-title").text(`Insights for ${name}`);
+                d3.select("#document-list").html(""); 
+
+                const regionSummaryContainer = d3.select("#document-list"); 
+                regionSummaryContainer.append("p").html(`<b>Total Documents in Region:</b> ${[...new Set(details["Government document"])].length}`);
+                regionSummaryContainer.append("p").html(`<b>Countries in Region:</b> ${details.countries.join(', ')}`);
+
+                const regionalPolicyClassCounts = {}; 
+                details["Policy class"].forEach(pc => {
+                    regionalPolicyClassCounts[pc] = (regionalPolicyClassCounts[pc] || 0) + 1;
+                });
+                d3.select("#doc-title").text(`Regional Breakdown for ${name}`);
+                d3.select("#doc-charts").html(""); 
+
+                const regionalFocusAreaCounts = {};
+                details["Focus areas"].forEach(fa => {
+                    regionalFocusAreaCounts[fa] = (regionalFocusAreaCounts[fa] || 0) + 1;
+                });
+
+                d3.select("#doc-charts").append("div")
+                    .style("margin-top", "1rem")
+                    .append("h5").text("Top Focus Areas:");
+                const focusAreaList = d3.select("#doc-charts").append("ul")
+                    .style("list-style-type", "none")
+                    .style("padding-left", "0");
+
+                Object.entries(regionalFocusAreaCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .forEach(([area, count]) => {
+                        focusAreaList.append("li").text(`${area} (${count} documents)`);
+                    });
+
+                d3.select("#doc-charts").append("div")
+                    .style("margin-top", "1rem")
+                    .append("h5").text("Employment Promotions:");
+                d3.select("#doc-charts").html(d3.select("#doc-charts").html() + `
+                    ${getBadge("Youth", details["Policy promotes youth employment"] === "Yes")}
+                    ${getBadge("Women", details["Policy promotes women employment"] === "Yes")}
+                    ${getBadge("Disability", details["policy promotes employment of people with disabilities"] === "Yes")}
+                `);
+            }
+        });
+}
+
 
 // Fetch data and geo
 Promise.all([
   d3.json("/geo"),
   d3.json("/data")
-]).then(([geoData, policyData]) => { 
+]).then(([fetchedGeoData, fetchedPolicyData]) => { 
+  geoData = fetchedGeoData;
+  policyData = fetchedPolicyData;
 
   policyData.forEach(d => dataMap[d.country] = d);
 
-  // Extract unique focus areas and policy classes
   const focusSet = new Set();
   const classSet = new Set();
   policyData.forEach(d => {
-    d["Focus areas"].forEach(f => focusSet.add(f));
-    d["Policy class"].forEach(c => classSet.add(c));
+    if (d["Focus areas"]) d["Focus areas"].forEach(f => focusSet.add(f));
+    if (d["Policy class"]) d["Policy class"].forEach(c => classSet.add(c));
   });
 
-  // Populate dropdowns
-  focusSet.forEach(f => {
-    d3.select("#focusFilter").append("option").text(f).attr("value", f);
-  });
-  classSet.forEach(c => {
-    d3.select("#classFilter").append("option").text(c).attr("value", c);
-  });
+  d3.select("#focusFilter").append("option").text("All").attr("value", "all");
+  focusSet.forEach(f => { d3.select("#focusFilter").append("option").text(f).attr("value", f); });
+  
+  d3.select("#classFilter").append("option").text("All").attr("value", "all");
+  classSet.forEach(c => { d3.select("#classFilter").append("option").text(c).attr("value", c); });
 
-  // Draw countries
-  countryPaths = svg.selectAll("path")
-    .data(geoData.features)
-    .enter().append("path")
-    .attr("class", "country")
-    .attr("fill", d => dataMap[d.properties.name] ? "#9fa8da" : "#e5e7eb")
-    .attr("stroke", "#ffffff")
-    .attr("stroke-width", 1)
-    .attr("d", path)
-    .on("mouseover", function(event, d) {
-      const countryName = d.properties.name;
-      const details = dataMap[countryName];
-      if (!details) return;
+  // Prepare regional data after country data is loaded
+  prepareRegionalData(geoData, policyData);
 
-      // --- Start Zoom on Hover Changes ---
-      const originalTransform = d3.select(this).attr("transform") || "";
-
-      d3.select(this)
-        .attr("stroke", "#374151")
-        .attr("stroke-width", 1.5)
-        .each(function() { 
-          const bbox = this.getBBox();
-          const centroidX = bbox.x + bbox.width / 2;
-          const centroidY = bbox.y + bbox.height / 2;
-          const scaleFactor = 1.05;
-
-          d3.select(this)
-            .transition()
-            .duration(100)
-            .attr("transform", `translate(${centroidX * (1 - scaleFactor)}, ${centroidY * (1 - scaleFactor)}) scale(${scaleFactor})`)
-            .attr("data-original-transform", originalTransform);
-        });
-      // --- End Zoom on Hover Changes ---
-
-
-      const allFocus = [...new Set(details["Focus areas"])];
-      const allClasses = [...new Set(details["Policy class"])];
-      const allDocs = details["Government document"];
-
-      const matchesFocus = (fa) => selectedFocus === "all" || fa === selectedFocus;
-      const matchesClass = (pc) => selectedClass === "all" || pc === selectedClass;
-
-      const matchedDocs = allDocs.filter((doc, i) =>
-        matchesFocus(details["Focus areas"][i]) &&
-        matchesClass(details["Policy class"][i])
-      );
-
-      const uniqueMatchedDocs = [...new Set(matchedDocs)];
-
-
-      tooltip.transition().duration(200).style("opacity", 0.95);
-      tooltip.html(`
-        <strong>${countryName}</strong><br/>
-
-        <b>Matched Focus Area:</b> ${
-          selectedFocus === "all"
-            ? "<i>All</i>"
-            : allFocus.includes(selectedFocus)
-              ? selectedFocus
-              : "<i>None</i>"
-        }<br/>
-
-        <b>Matched Policy Class:</b> ${
-          selectedClass === "all"
-            ? "<i>All</i>"
-            : allClasses.includes(selectedClass)
-              ? selectedClass
-              : "<i>None</i>"
-        }<br/>
-
-        <b>Matched Documents:</b> ${uniqueMatchedDocs.length}
-        ${
-          uniqueMatchedDocs.length > 0
-            ? `<ul style="margin:4px 0 0 15px;">
-                ${uniqueMatchedDocs.slice(0, 5).map(d => `<li>${d}</li>`).join("")}
-                ${uniqueMatchedDocs.length > 5 ? "<li>...</li>" : ""}
-              </ul>`
-            : ""
-        }
-
-        <b>Total Actions:</b> ${allDocs.length}
-      `)
-      .style("left", (event.pageX + 10) + "px")
-      .style("top", (event.pageY - 40) + "px");
-
-
-    })
-  .on("mouseout", function(event, d) {
-    // --- Start Zoom on Hover Reset Changes ---
-    const originalTransform = d3.select(this).attr("data-original-transform") || "";
-
-    d3.select(this)
-      .attr("stroke", "#ffffff")
-      .attr("stroke-width", 1)
-      .transition()
-      .duration(100)
-      .attr("transform", originalTransform);
-    // --- End Zoom on Hover Reset Changes ---
-
-    tooltip.transition().duration(300).style("opacity", 0);
-  })
-  .on("click", (event, d) => {
-    const countryName = d.properties.name;
-    const details = dataMap[countryName];
-    if (!details) {
-      d3.select("#sidebar-title").text(`Documents for ${countryName} (No Data)`);
-      d3.select("#document-list").html("<p>No policy data available for this country.</p>");
-      d3.select("#doc-title").text("Select a document to see details");
-      d3.select("#doc-charts").html("");
-      // Also clear the policy class chart
-      d3.select("#class-chart").selectAll("*").remove(); 
-      return;
-    }
-
-    const allDocs = details["Government document"];
-    const focusList = details["Focus areas"];
-    const classList = details["Policy class"];
-
-    const matchesFocus = (fa) => selectedFocus === "all" || fa === selectedFocus;
-    const matchesClass = (pc) => selectedClass === "all" || pc === selectedClass;
-
-    // Step 1: Filter matched documents based on filters
-    const matchedDocs = allDocs.filter((doc, i) =>
-        matchesFocus(focusList[i]) && matchesClass(classList[i])
-    );
-
-    // Step 2: Remove duplicates
-    const uniqueDocs = [...new Set(matchedDocs)];
-
-    // Step 3: Update sidebar
-    d3.select("#sidebar-title").text(`Documents for ${countryName}`);
-    const listContainer = d3.select("#document-list");
-    listContainer.html("");
-
-    if (uniqueDocs.length === 0) {
-        listContainer.append("p").text("No matching documents.");
-        d3.select("#doc-title").text("Select a document to see details");
-        d3.select("#doc-charts").html("");
-        // Also clear the policy class chart
-        d3.select("#class-chart").selectAll("*").remove();
-    } else {
-        listContainer.append("p")
-        .style("margin-bottom", "0.5rem")
-        .style("font-weight", "bold")
-        .text(`${uniqueDocs.length} unique matching document${uniqueDocs.length > 1 ? "s" : ""}:`);
-
-        const ul = listContainer.append("ul");
-        uniqueDocs.forEach(doc => {
-        ul.append("li")
-        .text(doc)
-        .style("cursor", "pointer")
-        // Pass selected filters to showDocDetails for filtering cards
-        .on("click", () => showDocDetails(doc, details, selectedFocus, selectedClass)); 
-        });
-
-        // --- Aggregate data for renderPolicyClassChart based on matchedDocs ---
-        const policyClassCounts = {};
-        details["Government document"].forEach((doc, i) => {
-            if (uniqueDocs.includes(doc)) { // Only count if this document is in the unique, filtered set
-                const pc = details["Policy class"][i];
-                if (pc) {
-                    policyClassCounts[pc] = (policyClassCounts[pc] || 0) + 1;
-                }
-            }
-        });
-        
-        renderPolicyClassChart(policyClassCounts); // Call the chart function with the aggregated data
-    }
+  // --- Map View Switcher Logic ---
+  d3.select("#view-country").on("click", function() {
+      currentMapView = 'country';
+      d3.selectAll("#map-view-switcher button").classed("active-view-btn", false);
+      d3.select(this).classed("active-view-btn", true);
+      resetSidebarAndDetails(); 
+      drawMap(); 
+      updateMap(); 
   });
 
+  d3.select("#view-region").on("click", function() {
+      currentMapView = 'region';
+      d3.selectAll("#map-view-switcher button").classed("active-view-btn", false);
+      d3.select(this).classed("active-view-btn", true);
+      resetSidebarAndDetails(); 
+      drawMap(); 
+      updateMap(); 
+  });
 
   // --- Filter change logic ---
   d3.selectAll("#focusFilter, #classFilter").on("change", () => {
-      selectedFocus = d3.select("#focusFilter").property("value");
+      selectedFocus = d3.select("#focusFilter").property("value"); 
       selectedClass = d3.select("#classFilter").property("value");
-      updateMap();
+      resetSidebarAndDetails(); 
+      updateMap(); 
   });
 
-  updateMap(); // Initial map update after data load
+  // Initial draw and update
+  drawMap(); 
+  updateMap(); 
 
-}); // End of Promise.all().then() block
+}); 
 
 
+// --- Reset Sidebar and Details Panel ---
+function resetSidebarAndDetails() {
+    d3.select("#sidebar-title").text(currentMapView === 'country' ? `Click a country` : `Click a region`);
+    d3.select("#document-list").html("");
+    d3.select("#doc-title").text("Select a document to see details");
+    d3.select("#doc-charts").html("");
+    d3.select("#class-chart").selectAll("*").remove(); 
+    d3.select("#focus-chart").selectAll("*").remove(); 
+}
+
+
+// --- updateMap function to adapt to currentMapView ---
 function updateMap() {
-  countryPaths.attr("fill", d => {
-    const details = dataMap[d.properties.name];
-    if (!details) return "#e5e7eb";
+  let dataMapToUse = (currentMapView === 'country') ? dataMap : regionDataMap;
+  let dataToDraw = (currentMapView === 'country') ? geoData.features : regionGeoData.features;
 
-    const matchesFocus = selectedFocus === "all" || details["Focus areas"].includes(selectedFocus);
-    const matchesClass = selectedClass === "all" || details["Policy class"].includes(selectedClass);
+  svg.selectAll(".map-entity") 
+    .data(dataToDraw, d => d.properties.name)
+    .attr("fill", d => {
+        const details = dataMapToUse[d.properties.name];
+        if (!details || details["Government document"].length === 0) return "#e5e7eb";
 
-    return (matchesFocus && matchesClass) ? "#F1B434" : "#f0f0f0";
-  });
+        if (currentMapView === 'country') {
+            const hasMatchingDocument = details["Government document"].some((doc, i) =>
+                filterMatches(details["Focus areas"][i], selectedFocus) &&
+                filterMatches(details["Policy class"][i], selectedClass)
+            );
+            return hasMatchingDocument ? "#F1B434" : "#f0f0f0";
+        } else {
+            return "#F1B434"; 
+        }
+    });
 }
 
 /**
  * Lists all unique actions or strategies associated with a specific document
  * for a given country.
- *  'action or strategy' is the exact field name in the JSON data.
  */
 function getUniqueActionsForDocument(docTitle, countryDetails) {
   const uniqueActions = new Set();
@@ -261,7 +469,7 @@ function getUniqueActionsForDocument(docTitle, countryDetails) {
   return Array.from(uniqueActions);
 }
 
-// --- showDocDetails function ---
+// --- showDocDetails function (for individual documents in Country View) ---
 function showDocDetails(docTitle, details, currentSelectedFocus, currentSelectedClass) {
   d3.select("#doc-title").text(docTitle);
 
@@ -269,19 +477,16 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
   const allFocusAreas = details["Focus areas"];
   const allPolicyClasses = details["Policy class"];
 
-  // Find all original indices where this specific document appears
   const rawIndices = allGovDocs
     .map((doc, i) => doc === docTitle ? i : -1)
     .filter(i => i !== -1);
 
-  // Filter these indices based on the active global filters (currentSelectedFocus, currentSelectedClass)
   const filteredIndices = rawIndices.filter(i => {
-    const focusMatch = currentSelectedFocus === "all" || allFocusAreas[i] === currentSelectedFocus;
-    const classMatch = currentSelectedClass === "all" || allPolicyClasses[i] === currentSelectedClass;
+    const focusMatch = filterMatches(allFocusAreas[i], currentSelectedFocus);
+    const classMatch = filterMatches(allPolicyClasses[i], currentSelectedClass);
     return focusMatch && classMatch;
   });
 
-  // Group rows by policy class (only for the filtered indices)
   const classGroups = {};
   filteredIndices.forEach(i => { 
     const cls = allPolicyClasses[i];
@@ -304,11 +509,9 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
     }
   });
 
-  // Clear previous output
   const chartArea = d3.select("#doc-charts");
   chartArea.html("");
 
-  // Flex container
   chartArea
     .style("display", "flex")
     .style("flex-wrap", "wrap")
@@ -316,7 +519,6 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
     .style("gap", "1rem")
     .style("margin-top", "1rem");
 
-  // Utility for badge markup
   const getBadge = (label, hasYes) => {
     return `<span style="
       background: ${hasYes ? '#dcfce7' : '#fee2e2'};
@@ -333,7 +535,6 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
 
   const hasYes = arr => arr.some(v => v === "Yes");
 
-  // Render each policy class block
   Object.entries(classGroups).forEach(([policyClass, flags]) => {
     const container = chartArea.append("div")
       .style("background", "#ffffff")
@@ -345,7 +546,7 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
       .style("width", "240px")
       .style("vertical-align", "top")
       .style("font-family", "'Segoe UI', Roboto, sans-serif")
-      .style("border-left", "5px solid #f1b434"); // Consistent accent color
+      .style("border-left", "5px solid #f1b434");
 
     container.append("h4")
       .style("margin", "0 0 0.75rem 0")
@@ -360,7 +561,6 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
       ${getBadge("Disability", hasYes(flags.disability))}
     `);
 
-    // --- Display unique actions/strategies for this policy class group ---
     if (flags.actions.size > 0) {
     container.append("div")
         .style("margin-top", "1rem")
@@ -370,7 +570,7 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
     const actionsList = container.append("ul")
         .style("list-style", "decimal")
         .style("margin", "0.5rem 0 0 15px")
-        .style("padding-left", "25px") // Added padding for numbers
+        .style("padding-left", "25px")
         .style("max-height", "120px")
         .style("overflow-y", "auto"); 
     Array.from(flags.actions).forEach(action => {
@@ -383,31 +583,6 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
   });
 }
 
-
-function renderPolicyClassChart(data) {
-  const svg = d3.select("#class-chart");
-  svg.selectAll("*").remove();
-
-  const width = +svg.attr("width");
-  const height = +svg.attr("height");
-  const radius = Math.min(width, height) / 2;
-
-  const pie = d3.pie().value(d => d[1]);
-  const arc = d3.arc().innerRadius(40).outerRadius(radius - 10);
-
-  const color = d3.scaleOrdinal(d3.schemeSet2);
-
-  const g = svg.append("g")
-    .attr("transform", `translate(${width/2}, ${height/2})`);
-
-  const arcs = g.selectAll("path")
-    .data(pie(Object.entries(data)))
-    .enter().append("path")
-    .attr("d", arc)
-    .attr("fill", (d, i) => color(i))
-    .append("title")
-    .text(d => `${d.data[0]}: ${d.data[1]}`);
-}
 
 function renderSocialTags(youth, women, disability) {
   const container = d3.select("#social-tags");

@@ -79,7 +79,7 @@ select:hover {
 
 select:focus {
   outline: none;
-  border-color: #6366f1;
+  border-color: #89560a;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
@@ -299,8 +299,8 @@ select:focus {
 }
 
 #map-view-switcher button.active-view-btn:hover {
-  background-color: #4f46e5; /* Darker blue on hover */
-  border-color: #4f46e5;
+  background-color: #89560a; /* Darker blue on hover */
+  border-color: #89560a;
 }
 
 /* Style for disabled filters */
