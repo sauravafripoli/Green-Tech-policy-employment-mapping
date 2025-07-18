@@ -15,7 +15,7 @@ def _():
 
 @app.cell
 def _(pd):
-    df = pd.read_csv('../data/Wilma-climate tech policies .csv')
+    df = pd.read_csv('../data/Wilma-climate tech policies.csv')
     df
     return (df,)
 
@@ -193,6 +193,11 @@ def _(grouped):
     # Save to JSON as an array of records (VALID JSON for D3/Flask)
     grouped_data.to_json("../data/africa_policy_data.json", orient="records", indent=2)
 
+    return
+
+
+@app.cell
+def _():
     return
 
 

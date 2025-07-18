@@ -122,7 +122,7 @@ Promise.all([
             : ""
         }
 
-        <b>Total Documents:</b> ${allDocs.length}
+        <b>Total Actions:</b> ${allDocs.length}
       `)
       .style("left", (event.pageX + 10) + "px")
       .style("top", (event.pageY - 40) + "px");
