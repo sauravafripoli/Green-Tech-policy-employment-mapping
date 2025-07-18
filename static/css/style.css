@@ -213,7 +213,7 @@ select:focus {
   align-items: flex-start;
   min-width: 220px; /* Ensure a minimum width */
   flex-grow: 1; /* Allow cards to grow if space available */
-  border-left: 5px solid #6366f1; /* Primary color accent border */
+  border-left: 5px solid #f1b434; /* Primary color accent border */
   box-sizing: border-box; /* Include padding and border in width */
 }
 

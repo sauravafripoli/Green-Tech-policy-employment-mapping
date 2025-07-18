@@ -25,7 +25,7 @@ let regionDataMap = {};   // Aggregated policy data for regions
 let geoData = null;
 let policyData = null;
 
-// --- IMPORTANT: DEFINING  REGIONS HERE ---
+// --- IMPORTANT: DEFINING REGIONS HERE ---
 const regionDefinitions = {
     "North Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
     "West Africa": ["Benin", "Burkina Faso", "Cabo Verde", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
@@ -111,7 +111,7 @@ function prepareRegionalData(allGeoData, allPolicyData) {
         regionDataMap[regionName] = aggregatedRegionDetails;
     });
 
-    // 2. Aggregate GeoJSON (Requires full topojson library, assuming allGeoData is a GeoJSON FeatureCollection)
+    // 2. Aggregate GeoJSON 
     if (allGeoData.type === "FeatureCollection" && allGeoData.features && typeof topojson !== 'undefined' && typeof topojson.topology === 'function') {
         const mergedFeatures = [];
         Object.keys(regionDefinitions).forEach(regionName => {
@@ -154,7 +154,7 @@ function prepareRegionalData(allGeoData, allPolicyData) {
 
 
 function drawMap() {
-    svg.selectAll("path").remove(); // Clear existing map paths
+    svg.selectAll("path").remove();
 
     let dataToDraw;
     let dataMapToUse; // Reference to either dataMap (countries) or regionDataMap
@@ -176,9 +176,9 @@ function drawMap() {
     }
 
     countryPaths = svg.selectAll("path")
-        .data(dataToDraw, d => d.properties.name) // Use d.properties.name as key for join
+        .data(dataToDraw, d => d.properties.name)
         .enter().append("path")
-        .attr("class", "map-entity") // Generic class for both countries/regions
+        .attr("class", "map-entity")
         .attr("fill", d => dataMapToUse[d.properties.name] && dataMapToUse[d.properties.name]["Government document"].length > 0 ? "#9fa8da" : "#e5e7eb")
         .attr("stroke", "#ffffff")
         .attr("stroke-width", 1)
@@ -225,8 +225,15 @@ function drawMap() {
                 tooltipHtml += `
                     <b>Matched Focus Area:</b> ${selectedFocus === "all" ? "<i>All</i>" : (allFocus.includes(selectedFocus) ? selectedFocus : "<i>None</i>")}<br/>
                     <b>Matched Policy Class:</b> ${selectedClass === "all" ? "<i>All</i>" : (allClasses.includes(selectedClass) ? selectedClass : "<i>None</i>")}<br/>
-                    <b>Matched Actions:</b> ${matchedDocsCount}
-                    <br/>
+                    <b>Matched Documents:</b> ${matchedDocsCount}
+                    ${
+                      matchedDocsCount > 0
+                        ? `<ul style="margin:4px 0 0 15px;">
+                            ${allDocs.filter((d_item,i_idx) => filterMatches(details["Focus areas"][i_idx], selectedFocus) && filterMatches(details["Policy class"][i_idx], selectedClass)).slice(0, 5).map(d_map => `<li>${d_map}</li>`).join("")}
+                            ${matchedDocsCount > 5 ? "<li>...</li>" : ""}
+                          </ul>`
+                        : ""
+                    }
                     <b>Total Documents:</b> ${[...new Set(allDocs)].length}
                 `;
             } else { // currentMapView === 'region'
@@ -341,12 +348,17 @@ function drawMap() {
 
                 d3.select("#doc-charts").append("div")
                     .style("margin-top", "1rem")
-                    .append("h5").text("Employment Promotions:");
-                d3.select("#doc-charts").html(d3.select("#doc-charts").html() + `
-                    ${getBadge("Youth", details["Policy promotes youth employment"] === "Yes")}
-                    ${getBadge("Women", details["Policy promotes women employment"] === "Yes")}
-                    ${getBadge("Disability", details["policy promotes employment of people with disabilities"] === "Yes")}
-                `);
+                    .append("h5").text("Top Policy Classes:");
+                const policyClassList = d3.select("#doc-charts").append("ul")
+                    .style("list-style-type", "none")
+                    .style("padding-left", "0");
+                
+                Object.entries(regionalPolicyClassCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .forEach(([policyClass, count]) => {
+                        policyClassList.append("li").text(`${policyClass} (${count} documents)`);
+                    });
             }
         });
 }
@@ -439,7 +451,7 @@ function updateMap() {
                 filterMatches(details["Focus areas"][i], selectedFocus) &&
                 filterMatches(details["Policy class"][i], selectedClass)
             );
-            return hasMatchingDocument ? "#F1B434" : "#f0f0f0";
+            return "#F1B434"; 
         } else {
             return "#F1B434"; 
         }
@@ -472,6 +484,9 @@ function getUniqueActionsForDocument(docTitle, countryDetails) {
 // --- showDocDetails function (for individual documents in Country View) ---
 function showDocDetails(docTitle, details, currentSelectedFocus, currentSelectedClass) {
   d3.select("#doc-title").text(docTitle);
+
+  d3.select("#class-chart").selectAll("*").remove(); 
+  d3.select("#focus-chart").selectAll("*").remove(); 
 
   const allGovDocs = details["Government document"];
   const allFocusAreas = details["Focus areas"];
