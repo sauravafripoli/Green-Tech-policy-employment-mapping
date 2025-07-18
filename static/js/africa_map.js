@@ -64,6 +64,21 @@ const getBadge = (label, hasYes) => {
 
 const hasYes = arr => arr.some(v => v === "Yes");
 
+// --- NEW GLOBAL HELPER FUNCTION: createCardContainer ---
+const createCardContainer = (parentSelection) => {
+    return parentSelection.append("div")
+        .style("background", "#ffffff")
+        .style("border-radius", "12px")
+        .style("box-shadow", "0 1px 4px rgba(0,0,0,0.1)")
+        .style("padding", "1rem 1.25rem")
+        .style("width", "240px") // Fixed width for cards
+        .style("vertical-align", "top") // To align cards at the top in a flex container
+        .style("font-family", "'Segoe UI', Roboto, sans-serif")
+        .style("border-left", "5px solid #f1b434") // <<< FIXED COLOR TO #f1b434
+        .style("box-sizing", "border-box") // Ensure padding/border included in width
+        .style("flex-shrink", "0"); // Prevent cards from shrinking in a flex container
+};
+
 
 // Prepare Regional Data and GeoJSON 
 function prepareRegionalData(allGeoData, allPolicyData) {
@@ -157,7 +172,7 @@ function drawMap() {
     svg.selectAll("path").remove();
 
     let dataToDraw;
-    let dataMapToUse; // Reference to either dataMap (countries) or regionDataMap
+    let dataMapToUse;
 
     if (currentMapView === 'country') {
         dataToDraw = geoData.features;
@@ -213,9 +228,6 @@ function drawMap() {
                 const allFocus = [...new Set(details["Focus areas"])];
                 const allClasses = [...new Set(details["Policy class"])];
                 const allDocs = details["Government document"];
-
-                const matchesFocus = selectedFocus === "all" || allFocus.includes(selectedFocus);
-                const matchesClass = selectedClass === "all" || allClasses.includes(selectedClass);
 
                 const matchedDocsCount = allDocs.filter((doc, i) =>
                     filterMatches(details["Focus areas"][i], selectedFocus) &&
@@ -332,13 +344,14 @@ function drawMap() {
                     regionalFocusAreaCounts[fa] = (regionalFocusAreaCounts[fa] || 0) + 1;
                 });
 
-                d3.select("#doc-charts").append("div")
-                    .style("margin-top", "1rem")
-                    .append("h5").text("Top Focus Areas:");
-                const focusAreaList = d3.select("#doc-charts").append("ul")
+                // --- Use createCardContainer for Top Focus Areas ---
+                const focusAreaCard = createCardContainer(d3.select("#doc-charts"));
+                focusAreaCard.append("h5")
+                    .style("margin-top", "0").text("Top Focus Areas:"); 
+                const focusAreaList = focusAreaCard.append("ul")
                     .style("list-style-type", "none")
-                    .style("padding-left", "0");
-
+                    .style("padding-left", "0")
+                    .style("word-break", "break-word"); // Added for list items
                 Object.entries(regionalFocusAreaCounts)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
@@ -346,12 +359,14 @@ function drawMap() {
                         focusAreaList.append("li").text(`${area} (${count} documents)`);
                     });
 
-                d3.select("#doc-charts").append("div")
-                    .style("margin-top", "1rem")
-                    .append("h5").text("Top Policy Classes:");
-                const policyClassList = d3.select("#doc-charts").append("ul")
+                // --- Use createCardContainer for Top Policy Classes ---
+                const policyClassCard = createCardContainer(d3.select("#doc-charts"));
+                policyClassCard.append("h5")
+                    .style("margin-top", "0").text("Top Policy Classes:");
+                const policyClassList = policyClassCard.append("ul")
                     .style("list-style-type", "none")
-                    .style("padding-left", "0");
+                    .style("padding-left", "0")
+                    .style("word-break", "break-word"); // Added for list items
                 
                 Object.entries(regionalPolicyClassCounts)
                     .sort((a, b) => b[1] - a[1])
@@ -551,17 +566,8 @@ function showDocDetails(docTitle, details, currentSelectedFocus, currentSelected
   const hasYes = arr => arr.some(v => v === "Yes");
 
   Object.entries(classGroups).forEach(([policyClass, flags]) => {
-    const container = chartArea.append("div")
-      .style("background", "#ffffff")
-      .style("border-radius", "12px")
-      .style("box-shadow", "0 1px 4px rgba(0,0,0,0.1)")
-      .style("padding", "1rem 1.25rem")
-      .style("margin", "1rem 1rem 1rem 0")
-      .style("display", "inline-block")
-      .style("width", "240px")
-      .style("vertical-align", "top")
-      .style("font-family", "'Segoe UI', Roboto, sans-serif")
-      .style("border-left", "5px solid #f1b434");
+    const container = createCardContainer(chartArea); // Use the helper for consistency
+    // Removed: container.style("margin", "1rem 1rem 1rem 0"); // Handled by parent gap
 
     container.append("h4")
       .style("margin", "0 0 0.75rem 0")
