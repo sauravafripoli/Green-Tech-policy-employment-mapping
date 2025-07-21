@@ -390,10 +390,14 @@ Promise.all([
   });
 
   d3.select("#focusFilter").append("option").text("All").attr("value", "all");
-  focusSet.forEach(f => { d3.select("#focusFilter").append("option").text(f).attr("value", f); });
+  Array.from(focusSet).sort().forEach(f => {
+    d3.select("#focusFilter").append("option").text(f).attr("value", f);
+  });
   
   d3.select("#classFilter").append("option").text("All").attr("value", "all");
-  classSet.forEach(c => { d3.select("#classFilter").append("option").text(c).attr("value", c); });
+   Array.from(classSet).sort().forEach(c => {
+    d3.select("#classFilter").append("option").text(c).attr("value", c);
+  });
 
   // Prepare regional data after country data is loaded
   prepareRegionalData(geoData, policyData);
@@ -452,16 +456,22 @@ function updateMap() {
     .data(dataToDraw, d => d.properties.name)
     .attr("fill", d => {
         const details = dataMapToUse[d.properties.name];
+        // FIX 1: Check Government Document length for data presence
         if (!details || details["Government document"].length === 0) return "#e5e7eb";
 
         if (currentMapView === 'country') {
-            const hasMatchingDocument = details["Government document"].some((doc, i) =>
-                filterMatches(details["Focus areas"][i], selectedFocus) &&
-                filterMatches(details["Policy class"][i], selectedClass)
-            );
-            return "#F1B434"; 
+            // FIX 2: Iterate over Government Document to find matching documents
+            const hasMatchingDocument = details["Government document"].some((doc, i) => {
+                // Ensure the index 'i' is valid for associated arrays
+                if (i < details["Focus areas"].length && i < details["Policy class"].length) {
+                    return filterMatches(details["Focus areas"][i], selectedFocus) &&
+                           filterMatches(details["Policy class"][i], selectedClass);
+                }
+                return false; // If index is out of bounds for related arrays, no match
+            });
+            return hasMatchingDocument ? "#F1B434" : "#f0f0f0"; 
         } else {
-            return "#F1B434"; 
+            return "#F1B434"; // Regions with data are always colored orange (as per previous consensus)
         }
     });
 }
