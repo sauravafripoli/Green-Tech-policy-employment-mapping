@@ -228,13 +228,13 @@ def _(data, pd, regions):
     for region, countries in regions.items():
         # Filter data for the current region
         region_data = data[data['Country name'].isin(countries)]
-    
+
         # Count occurrences of each Policy class
         policy_counts = region_data['Policy class'].value_counts()
-    
+
         # Get the top 10 Policy classes
         top_policy_classes = policy_counts.head(10)
-    
+
         # Store the results
         top_policy_classes_per_region[region] = top_policy_classes
 
@@ -253,13 +253,13 @@ def _(data, pd, regions):
         for region, countries in regions.items():
             # Filter data for the current region
             region_data = data[data['Country name'].isin(countries)]
-        
+
             # Count occurrences of each Focus area
             focus_counts = region_data['Focus areas'].value_counts()
-        
+
             # Get the top 10 Focus areas
             top_focus_areas = focus_counts.head(10)
-        
+
             # Store the results
             top_focus_areas_per_region[region] = top_focus_areas
 
@@ -279,13 +279,13 @@ def _(plt, top_policy_classes_per_region):
     def plot_policy_classes_by_region():
         fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(15, 15))
         axes = axes.flatten()
-    
+
         for i, (region, counts) in enumerate(top_policy_classes_per_region.items()):
             counts.plot(kind='barh', ax=axes[i], title=f'Top Policy Classes in {region}')
             axes[i].set_xlabel('Number of Policies')
             axes[i].set_ylabel('Policy Class')
             axes[i].invert_yaxis()  # Invert y-axis for better readability
-    
+
         plt.tight_layout()
         plt.show()
 
