@@ -87,8 +87,10 @@ function prepareRegionalData(allGeoData, allPolicyData) {
         const countriesInRegion = regionDefinitions[regionName];
         const aggregatedRegionDetails = {
             "Government document": [],
-            "Focus areas": new Set(),
-            "Policy class": new Set(),
+            "Focus areas Raw": [], // <<< NEW: Store raw list for actual counts
+            "Policy class Raw": [], // <<< NEW: Store raw list for actual counts
+            "Focus areas": new Set(), // Still keep for unique list (for filters, general display)
+            "Policy class": new Set(), // Still keep for unique list (for filters, general display)
             "action or strategy": new Set(),
             "Policy promotes youth employment": false,
             "Policy promotes women employment": false,
@@ -101,8 +103,19 @@ function prepareRegionalData(allGeoData, allPolicyData) {
             const countryDetails = dataMap[countryName];
             if (countryDetails) {
                 aggregatedRegionDetails["Government document"].push(...countryDetails["Government document"]);
-                countryDetails["Focus areas"].forEach(f => aggregatedRegionDetails["Focus areas"].add(f));
-                countryDetails["Policy class"].forEach(c => aggregatedRegionDetails["Policy class"].add(c));
+                
+                // --- CRITICAL CHANGE FOR COUNTING FOCUS AREAS ---
+                if (countryDetails["Focus areas"]) {
+                    aggregatedRegionDetails["Focus areas Raw"].push(...countryDetails["Focus areas"]); // Add all occurrences
+                    countryDetails["Focus areas"].forEach(f => aggregatedRegionDetails["Focus areas"].add(f)); // Add to Set for unique list
+                }
+                
+                // --- CRITICAL CHANGE FOR COUNTING POLICY CLASS ---
+                if (countryDetails["Policy class"]) {
+                    aggregatedRegionDetails["Policy class Raw"].push(...countryDetails["Policy class"]); // Add all occurrences
+                    countryDetails["Policy class"].forEach(c => aggregatedRegionDetails["Policy class"].add(c)); // Add to Set for unique list
+                }
+
                 countryDetails["action or strategy"].forEach(a => aggregatedRegionDetails["action or strategy"].add(a));
                 
                 if (countryDetails["Policy promotes youth employment"] === "Yes") aggregatedRegionDetails["Policy promotes youth employment"] = true;
@@ -114,14 +127,17 @@ function prepareRegionalData(allGeoData, allPolicyData) {
             }
         });
 
-        // Convert Sets back to Arrays and boolean flags to "Yes"/"No"
+        // Convert Sets back to Arrays for the unique lists
         aggregatedRegionDetails["Focus areas"] = Array.from(aggregatedRegionDetails["Focus areas"]);
         aggregatedRegionDetails["Policy class"] = Array.from(aggregatedRegionDetails["Policy class"]);
+        
+        // Convert action or strategy Set to Array
         aggregatedRegionDetails["action or strategy"] = Array.from(aggregatedRegionDetails["action or strategy"]);
         
+        // Convert boolean flags to "Yes"/"No" strings
         aggregatedRegionDetails["Policy promotes youth employment"] = aggregatedRegionDetails["Policy promotes youth employment"] ? "Yes" : "No";
         aggregatedRegionDetails["Policy promotes women employment"] = aggregatedRegionDetails["Policy promotes women employment"] ? "Yes" : "No";
-        aggregatedRegionDetails["policy promotes employment of people with disabilities"] = aggregatedRegionDetails["policy promotes employment of people with disabilities"] ? "Yes" : "No";
+        aggregatedRegionDetails["policy promotes employment of people with disabilities"] = aggregatedRegionDetails["policy promotes employment of employment of people with disabilities"] ? "Yes" : "No";
 
         regionDataMap[regionName] = aggregatedRegionDetails;
     });
@@ -326,17 +342,19 @@ function drawMap() {
                 regionSummaryContainer.append("p").html(`<b>Countries in Region:</b> ${details.countries.join(', ')}`);
 
                 const regionalPolicyClassCounts = {}; 
-                details["Policy class"].forEach(pc => {
+                // Using "Policy class Raw" for correct counts
+                details["Policy class Raw"].forEach(pc => {
                     regionalPolicyClassCounts[pc] = (regionalPolicyClassCounts[pc] || 0) + 1;
                 });
                 d3.select("#doc-title").text(`Regional Breakdown for ${name}`);
                 d3.select("#doc-charts").html(""); 
 
                 const regionalFocusAreaCounts = {};
-                details["Focus areas"].forEach(fa => {
+                // Using "Focus areas Raw" for correct counts
+                details["Focus areas Raw"].forEach(fa => {
                     regionalFocusAreaCounts[fa] = (regionalFocusAreaCounts[fa] || 0) + 1;
                 });
-
+                
                 // --- Use createCardContainer for Top Focus Areas ---
                 const focusAreaCard = createCardContainer(d3.select("#doc-charts"));
                 focusAreaCard.append("h5")
@@ -349,7 +367,7 @@ function drawMap() {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .forEach(([area, count]) => {
-                        focusAreaList.append("li").text(`${area} (${count} documents)`);
+                        focusAreaList.append("li").text(`${area} (${count} mentions)`); // Updated text
                     });
 
                 // --- Use createCardContainer for Top Policy Classes ---
@@ -365,7 +383,7 @@ function drawMap() {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .forEach(([policyClass, count]) => {
-                        policyClassList.append("li").text(`${policyClass} (${count} documents)`);
+                        policyClassList.append("li").text(`${policyClass} (${count} mentions)`); // Updated text
                     });
             }
         });

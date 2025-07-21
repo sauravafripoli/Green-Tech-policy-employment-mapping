@@ -242,7 +242,7 @@ def _(data, pd, regions):
     top_policy_classes_df = pd.DataFrame(top_policy_classes_per_region).fillna(0).astype(int).T
 
     top_policy_classes_df.head()
-    return (top_policy_classes_per_region,)
+    return top_policy_classes_df, top_policy_classes_per_region
 
 
 @app.cell
@@ -273,8 +273,16 @@ def _(data, pd, regions):
 
 
 @app.cell
-def _(plt, top_policy_classes_per_region):
-    # plotting the policy class graphs for all regions
+def _(plt, top_policy_classes_df, top_policy_classes_per_region):
+    # plotting the policy class graphs for all regions in percentage
+    def plot_top_policy_classes():
+        top_policy_classes_df.plot(kind='barh', figsize=(12, 8), stacked=True)
+        plt.title('Top 10 Policy Classes by Region')
+        plt.xlabel('Number of Policies')
+        plt.ylabel('Policy Class')
+        plt.legend(title='Region', bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.tight_layout()
+        plt.show()
 
     def plot_policy_classes_by_region():
         fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(15, 15))
@@ -290,6 +298,62 @@ def _(plt, top_policy_classes_per_region):
         plt.show()
 
     plot_policy_classes_by_region()
+    plot_top_policy_classes()
+
+    return
+
+
+@app.cell
+def _(data, pd, regions):
+        # finding top 10 focus areas per region with counts
+    top_focus_areas_per_region = {}
+    for reg, country in regions.items():
+        # Filter data for the current region
+        regional_data = data[data['Country name'].isin(country)]
+
+        # Count occurrences of each Focus area
+        focus_counts = regional_data['Focus areas'].value_counts()
+
+        # Get the top 10 Focus areas
+        top_focus_areas = focus_counts.head(10)
+
+        # Store the results
+        top_focus_areas_per_region[reg] = top_focus_areas
+
+    # Convert the results to a DataFrame for better visualization
+    top_focus_areas_df = pd.DataFrame(top_focus_areas_per_region).fillna(0).astype(int).T
+
+    top_focus_areas_df.head()
+    return top_focus_areas_df, top_focus_areas_per_region
+
+
+@app.cell
+def _(plt, top_focus_areas_df, top_focus_areas_per_region):
+    # potting the focus areas graphs for all regions in percentage
+
+    def plot_top_focus_areas():
+        top_focus_areas_df.plot(kind='barh', figsize=(12, 8), stacked=True)
+        plt.title('Top 10 Focus Areas by Region')
+        plt.xlabel('Number of Policies')
+        plt.ylabel('Focus Area')
+        plt.legend(title='Region', bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.tight_layout()
+        plt.show()
+
+    def plot_focus_areas_by_region():
+        fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(15, 15))
+        axes = axes.flatten()
+
+        for i, (region, counts) in enumerate(top_focus_areas_per_region.items()):
+            counts.plot(kind='barh', ax=axes[i], title=f'Top Focus Areas in {region}')
+            axes[i].set_xlabel('Number of Policies')
+            axes[i].set_ylabel('Focus Area')
+            axes[i].invert_yaxis()  # Invert y-axis for better readability
+
+        plt.tight_layout()
+        plt.show()
+
+    plot_focus_areas_by_region()
     return
 
 
