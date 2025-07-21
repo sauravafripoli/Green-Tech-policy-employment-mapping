@@ -365,7 +365,7 @@ function drawMap() {
                     .style("word-break", "break-word"); // Added for list items
                 Object.entries(regionalFocusAreaCounts)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
+                    .slice(0, 10)
                     .forEach(([area, count]) => {
                         focusAreaList.append("li").text(`${area} (${count} mentions)`); // Updated text
                     });
@@ -381,7 +381,7 @@ function drawMap() {
                 
                 Object.entries(regionalPolicyClassCounts)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
+                    .slice(0, 10)
                     .forEach(([policyClass, count]) => {
                         policyClassList.append("li").text(`${policyClass} (${count} mentions)`); // Updated text
                     });
