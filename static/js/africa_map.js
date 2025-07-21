@@ -79,6 +79,28 @@ const createCardContainer = (parentSelection) => {
         .style("flex-shrink", "0"); // Prevent cards from shrinking in a flex container
 };
 
+//// --- NEW GLOBAL HELPER FUNCTION: createBarChartContainer ---
+const createBarChartContainer = (parentSelection, titleText) => {
+    const container = parentSelection.append("div")
+        .style("background", "#ffffff")
+        .style("border-radius", "12px")
+        .style("box-shadow", "0 1px 4px rgba(0,0,0,0.1)")
+        .style("padding", "1rem 1.25rem")
+        .style("min-width", "450px") // Adjusted for charts
+        .style("vertical-align", "top")
+        .style("font-family", "'Segoe UI', Roboto, sans-serif")
+        .style("border-left", "5px solid #f1b434")
+        .style("box-sizing", "border-box")
+        .style("flex-shrink", "0")
+        .style("margin-bottom", "1rem"); // Add some bottom margin between charts
+
+    container.append("h5")
+        .style("margin-top", "0")
+        .text(titleText);
+
+    return container;
+};
+
 
 // Prepare Regional Data and GeoJSON 
 function prepareRegionalData(allGeoData, allPolicyData) {
@@ -349,42 +371,63 @@ function drawMap() {
                 d3.select("#doc-title").text(`Regional Breakdown for ${name}`);
                 d3.select("#doc-charts").html(""); 
 
+                // Set the display for the flex container
+                d3.select("#doc-charts")
+                    .style("display", "flex")
+                    .style("flex-wrap", "wrap")
+                    .style("gap", "1rem");
+
                 const regionalFocusAreaCounts = {};
                 // Using "Focus areas Raw" for correct counts
                 details["Focus areas Raw"].forEach(fa => {
                     regionalFocusAreaCounts[fa] = (regionalFocusAreaCounts[fa] || 0) + 1;
                 });
                 
-                // --- Use createCardContainer for Top Focus Areas ---
-                const focusAreaCard = createCardContainer(d3.select("#doc-charts"));
-                focusAreaCard.append("h5")
-                    .style("margin-top", "0").text("Top Focus Areas:"); 
-                const focusAreaList = focusAreaCard.append("ul")
-                    .style("list-style-type", "none")
-                    .style("padding-left", "0")
-                    .style("word-break", "break-word"); // Added for list items
-                Object.entries(regionalFocusAreaCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10)
-                    .forEach(([area, count]) => {
-                        focusAreaList.append("li").text(`${area} (${count} mentions)`); // Updated text
-                    });
+                // // --- Use createCardContainer for Top Focus Areas ---
+                // const focusAreaCard = createCardContainer(d3.select("#doc-charts"));
+                // focusAreaCard.append("h5")
+                //     .style("margin-top", "0").text("Top Focus Areas:"); 
+                // const focusAreaList = focusAreaCard.append("ul")
+                //     .style("list-style-type", "none")
+                //     .style("padding-left", "0")
+                //     .style("word-break", "break-word"); // Added for list items
+                // Object.entries(regionalFocusAreaCounts)
+                //     .sort((a, b) => b[1] - a[1])
+                //     .slice(0, 10)
+                //     .forEach(([area, count]) => {
+                //         focusAreaList.append("li").text(`${area} (${count} mentions)`); // Updated text
+                //     });
 
-                // --- Use createCardContainer for Top Policy Classes ---
-                const policyClassCard = createCardContainer(d3.select("#doc-charts"));
-                policyClassCard.append("h5")
-                    .style("margin-top", "0").text("Top Policy Classes:");
-                const policyClassList = policyClassCard.append("ul")
-                    .style("list-style-type", "none")
-                    .style("padding-left", "0")
-                    .style("word-break", "break-word"); // Added for list items
+                // // --- Use createCardContainer for Top Policy Classes ---
+                // const policyClassCard = createCardContainer(d3.select("#doc-charts"));
+                // policyClassCard.append("h5")
+                //     .style("margin-top", "0").text("Top Policy Classes:");
+                // const policyClassList = policyClassCard.append("ul")
+                //     .style("list-style-type", "none")
+                //     .style("padding-left", "0")
+                //     .style("word-break", "break-word"); // Added for list items
                 
-                Object.entries(regionalPolicyClassCounts)
+                // Object.entries(regionalPolicyClassCounts)
+                //     .sort((a, b) => b[1] - a[1])
+                //     .slice(0, 10)
+                //     .forEach(([policyClass, count]) => {
+                //         policyClassList.append("li").text(`${policyClass} (${count} mentions)`); // Updated text
+                //     });
+
+                // Prepare data for charts (top 10, sorted)
+                const topFocusAreas = Object.entries(regionalFocusAreaCounts)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 10)
-                    .forEach(([policyClass, count]) => {
-                        policyClassList.append("li").text(`${policyClass} (${count} mentions)`); // Updated text
-                    });
+                    .map(([area, count]) => ({ label: area, value: count })); // Map to {label, value} objects
+
+                const topPolicyClasses = Object.entries(regionalPolicyClassCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10)
+                    .map(([policyClass, count]) => ({ label: policyClass, value: count })); // Map to {label, value} objects
+                
+                // Render the bar charts
+                renderBarChart(d3.select("#doc-charts"), topFocusAreas, "Top Focus Areas");
+                renderBarChart(d3.select("#doc-charts"), topPolicyClasses, "Top Policy Classes");
             }
         });
 }
@@ -635,4 +678,86 @@ function renderSocialTags(youth, women, disability) {
   container.append("span").text(`Youth Employment: ${getStatus(youth)}`);
   container.append("span").text(`Women Employment: ${getStatus(women)}`);
   container.append("span").text(`Disability Inclusion: ${getStatus(disability)}`);
+}
+
+// --- NEW FUNCTION: renderBarChart ---
+function renderBarChart(parentSelection, data, titleText) {
+    // ADJUSTED MARGINS
+    const margin = { top: 20, right: 30, bottom: 150, left: 100 }; // <--- Increased bottom margin (was 100)
+    const width = 500 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    const containerDiv = createBarChartContainer(parentSelection, titleText);
+
+    const svgChart = containerDiv.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // X scale (for categories/labels)
+    const x = d3.scaleBand()
+        .domain(data.map(d => d.label))
+        .range([0, width])
+        .padding(0.1);
+
+    // Y scale (for values/counts)
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.value)]).nice()
+        .range([height, 0]);
+
+    // Draw bars
+    svgChart.selectAll(".bar")
+      .data(data)
+      .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.label))
+        .attr("y", d => y(d.value))
+        .attr("width", x.bandwidth())
+        .attr("height", d => height - y(d.value))
+        .attr("fill", "#F1B434"); // Orange color
+
+    // Add X-axis
+    svgChart.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        // ADJUSTED ROTATION AND POSITIONING FOR X-AXIS LABELS
+        .attr("transform", "rotate(-60)") // <--- Increased rotation angle (was -45)
+        .style("text-anchor", "end")
+        .style("font-size", "0.9em") // <--- Slightly reduced font size for more space (was 0.95em)
+        .style("font-weight", "bold")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em"); // Keep these, they usually work well with text-anchor: end
+
+    // Add Y-axis
+    svgChart.append("g")
+        .attr("class", "y-axis")
+        .call(d3.axisLeft(y).ticks(5)) // Adjust ticks as needed
+        .selectAll("text")
+        .style("font-size", "0.95em");
+
+    // Add Y-axis label
+    svgChart.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -margin.left + 20)
+        .attr("x", -height / 2)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("font-size", "0.95em")
+        .style("font-weight", "bold")
+        .text("Number of Mentions");
+
+    // Add value labels on top of bars
+    svgChart.selectAll(".bar-label")
+      .data(data)
+      .enter().append("text")
+        .attr("class", "bar-label")
+        .attr("x", d => x(d.label) + x.bandwidth() / 2)
+        .attr("y", d => y(d.value) - 5)
+        .attr("text-anchor", "middle")
+        .style("font-size", "0.95em") // Keep this font size as it's for the value
+        .style("fill", "#475569")
+        .text(d => d.value);
 }

@@ -358,7 +358,95 @@ def _(plt, top_focus_areas_df, top_focus_areas_per_region):
 
 
 @app.cell
-def _():
+def _(plt, top_policy_classes_per_region):
+    #plotting the policy classes graphs for all regions one by one
+    def plot_policy_classes_for_region(region):
+        if region in top_policy_classes_per_region:
+            counts = top_policy_classes_per_region[region]
+            counts.plot(kind='barh', figsize=(12, 6), title=f'Top Policy Classes in {region}')
+            plt.xlabel('Number of Policies')
+            plt.ylabel('Policy Class')
+            plt.tight_layout()
+            plt.show()
+        else:
+            print(f"No data available for region: {region}")
+
+
+    return (plot_policy_classes_for_region,)
+
+
+@app.cell
+def _(plot_policy_classes_for_region):
+    # Example usage:
+    plot_policy_classes_for_region("North Africa")
+    return
+
+
+@app.cell
+def _(plot_policy_classes_for_region):
+    plot_policy_classes_for_region("West Africa")
+    return
+
+
+@app.cell
+def _(plot_policy_classes_for_region):
+    plot_policy_classes_for_region("Central Africa")
+    return
+
+
+@app.cell
+def _(plot_policy_classes_for_region):
+    plot_policy_classes_for_region("East Africa")
+    return
+
+
+@app.cell
+def _(plot_policy_classes_for_region):
+    plot_policy_classes_for_region("Southern Africa")
+    return
+
+
+@app.cell
+def _(plt, top_focus_areas_per_region):
+    # Plotting focus areas for all regions one by one
+
+    def plot_focus_areas_for_region(region):
+        if region in top_focus_areas_per_region:
+            counts = top_focus_areas_per_region[region]
+            counts.plot(kind='barh', figsize=(12, 6), title=f'Top Focus Areas in {region}')
+            plt.xlabel('Number of Policies')
+            plt.ylabel('Focus Area')
+            plt.tight_layout()
+            plt.show()
+        else:
+            print(f"No data available for region: {region}")
+
+    # Example usage:
+    plot_focus_areas_for_region("North Africa")
+    return (plot_focus_areas_for_region,)
+
+
+@app.cell
+def _(plot_focus_areas_for_region):
+    plot_focus_areas_for_region("East Africa")
+    return
+
+
+@app.cell
+def _(plot_focus_areas_for_region):
+    plot_focus_areas_for_region("West Africa")
+    return
+
+
+@app.cell
+def _(plot_focus_areas_for_region):
+    plot_focus_areas_for_region("Southern Africa")
+    return
+
+
+@app.cell
+def _(plot_focus_areas_for_region):
+    plot_focus_areas_for_region("Central Africa")
     return
 
 
