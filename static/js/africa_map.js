@@ -71,12 +71,15 @@ const createCardContainer = (parentSelection) => {
         .style("border-radius", "12px")
         .style("box-shadow", "0 1px 4px rgba(0,0,0,0.1)")
         .style("padding", "1rem 1.25rem")
-        .style("width", "240px") // Fixed width for cards
-        .style("vertical-align", "top") // To align cards at the top in a flex container
+        .style("vertical-align", "top")
         .style("font-family", "'Segoe UI', Roboto, sans-serif")
-        .style("border-left", "5px solid #f1b434") // <<< FIXED COLOR TO #f1b434
+        .style("border-left", "5px solid #f1b434")
         .style("box-sizing", "border-box") // Ensure padding/border included in width
-        .style("flex-shrink", "0"); // Prevent cards from shrinking in a flex container
+        .style("flex-grow", "1") // Allow items to grow to fill space if there aren't enough for a full row
+        .style("flex-shrink", "1") // Allow items to shrink if necessary to prevent overflow
+        .style("flex-basis", "calc(33.33% - 1rem)") // Aim for 3 per row, accounting for gap
+        .style("max-width", "calc(33.33% - 1rem)")
+        .style("height", "400px"); 
 };
 
 //// --- NEW GLOBAL HELPER FUNCTION: createBarChartContainer ---

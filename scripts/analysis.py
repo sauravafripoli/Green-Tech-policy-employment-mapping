@@ -450,5 +450,10 @@ def _(plot_focus_areas_for_region):
     return
 
 
+@app.cell
+def _():
+    return
+
+
 if __name__ == "__main__":
     app.run()
