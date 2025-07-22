@@ -201,22 +201,11 @@ def _():
 
     # Define the regions and their corresponding countries
     regions = {
-        "North Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
-        "West Africa": ["Benin", "Burkina Faso", "Cape Verde", "Gambia", "Ghana",
-                        "Guinea", "Guinea-Bissau", "Ivory Coast", "Liberia", "Mali",
-                        "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
-        "Central Africa": ["Burundi", "Cameroon", "Central African Republic",
-                           "Chad", "Democratic Republic of Congo",
-                           "Republic of the Congo", "Equatorial Guinea",
-                           "Gabon", "São Tomé and Príncipe"],
-        "East Africa": ["Comoros", "Djibouti", "Eritrea", "Ethiopia",
-                        "Kenya", "Madagascar", "Mauritius", "Rwanda",
-                        "Seychelles", "Somalia", "South Sudan",
-                        "Tanzania", "Uganda"],
-        "Southern Africa": ["Angola", "Botswana", "Eswatini",
-                            "Lesotho", "Malawi", "Mozambique",
-                            "Namibia", "South Africa",
-                            "Zambia",  "Zimbabwe"]
+         "North Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
+        "West Africa": ["Benin", "Burkina Faso", "Cabo Verde", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
+        "Central Africa": ["Burundi", "Cameroon", "Central African Republic", "Chad", "Democratic Republic of Congo", "Republic of Congo", "Equatorial Guinea", "Gabon", "Sao Tome and Principe"],
+        "East Africa": ["Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Mauritius", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda"],
+        "Southern Africa": ["Angola", "Botswana", "Eswatini", "Lesotho", "Malawi", "Mozambique", "Namibia", "South Africa", "Zambia", "Zimbabwe"],
     }
     return (regions,)
 
@@ -383,8 +372,54 @@ def _(plot_policy_classes_for_region):
 
 
 @app.cell
+def _(data, plt):
+    # plotting percentage policy class distribution for  north africa
+
+    def plot_north_africa_policy_class_distribution():
+        north_africa_countries = ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"]
+        north_africa_data = data[data['Country name'].isin(north_africa_countries)]
+
+        # Count occurrences of each Policy class
+        policy_counts = north_africa_data['Policy class'].value_counts()
+
+        # Plotting
+        plt.figure(figsize=(10, 10))
+        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.title('Distribution of Policy Classes in North Africa')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+
+    plot_north_africa_policy_class_distribution()
+    return
+
+
+@app.cell
 def _(plot_policy_classes_for_region):
     plot_policy_classes_for_region("West Africa")
+    return
+
+
+@app.cell
+def _(data, plt):
+    # # plotting percentage policy class distribution for  west africa
+
+    def plot_west_africa_policy_class_distribution():
+        west_africa_countries = ["Benin", "Burkina Faso", "Cabo Verde", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"]
+        west_africa_data = data[data['Country name'].isin(west_africa_countries)]
+
+        # Count occurrences of each Policy class
+        policy_counts = west_africa_data['Policy class'].value_counts()
+
+        # Plotting
+        plt.figure(figsize=(10, 10))
+        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.title('Distribution of Policy Classes in West Africa')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+
+    plot_west_africa_policy_class_distribution()
     return
 
 
@@ -395,14 +430,83 @@ def _(plot_policy_classes_for_region):
 
 
 @app.cell
+def _(data, plt):
+    # # plotting percentage policy class distribution for  central africa
+
+    def plot_central_africa_policy_class_distribution():
+        central_africa_countries = ["Burundi", "Cameroon", "Central African Republic", "Chad", "Democratic Republic of Congo", "Republic of Congo", "Equatorial Guinea", "Gabon", "Sao Tome and Principe"]
+        central_africa_data = data[data['Country name'].isin(central_africa_countries)]
+
+        # Count occurrences of each Policy class
+        policy_counts = central_africa_data['Policy class'].value_counts()
+
+        # Plotting
+        plt.figure(figsize=(10, 10))
+        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.title('Distribution of Policy Classes in Central Africa')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+
+    plot_central_africa_policy_class_distribution()
+    return
+
+
+@app.cell
 def _(plot_policy_classes_for_region):
     plot_policy_classes_for_region("East Africa")
     return
 
 
 @app.cell
+def _(data, plt):
+    # plotting percentage policy class distribution for  east africa
+
+    def plot_east_africa_policy_class_distribution():
+        east_africa_countries = ["Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Mauritius", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda"]
+        east_africa_data = data[data['Country name'].isin(east_africa_countries)]
+
+        # Count occurrences of each Policy class
+        policy_counts = east_africa_data['Policy class'].value_counts()
+
+        # Plotting
+        plt.figure(figsize=(10, 10))
+        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.title('Distribution of Policy Classes in East Africa')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+
+    plot_east_africa_policy_class_distribution()
+    return
+
+
+@app.cell
 def _(plot_policy_classes_for_region):
     plot_policy_classes_for_region("Southern Africa")
+    return
+
+
+@app.cell
+def _(data, plt):
+    # # plotting percentage policy class distribution for  southern africa
+
+    def plot_southern_africa_policy_class_distribution():
+        southern_africa_countries = ["Angola", "Botswana", "Eswatini", "Lesotho", "Malawi", "Mozambique", "Namibia", "South Africa", "Zambia", "Zimbabwe"]
+        southern_africa_data = data[data['Country name'].isin(southern_africa_countries)]
+
+        # Count occurrences of each Policy class
+        policy_counts = southern_africa_data['Policy class'].value_counts()
+
+        # Plotting
+        plt.figure(figsize=(10, 10))
+        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.title('Distribution of Policy Classes in Southern Africa')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+
+    plot_southern_africa_policy_class_distribution()
     return
 
 
@@ -451,7 +555,164 @@ def _(plot_focus_areas_for_region):
 
 
 @app.cell
-def _():
+def _(data, plt):
+    # lets plot top focus areas of whole continent
+
+    def plot_top_focus_areas_continent():
+        # Count occurrences of each Focus area across all regions
+        focus_counts = data['Focus areas'].value_counts()
+
+        # Get the top 10 Focus areas
+        top_focus_areas = focus_counts.head(10)
+
+        # Plotting
+        top_focus_areas.plot(kind='barh', figsize=(12, 6), title='Top 10 Focus Areas in Africa')
+        plt.xlabel('Number of mentions')
+        plt.ylabel('Focus Area')
+        plt.tight_layout()
+        plt.show()
+
+    plot_top_focus_areas_continent()
+    return
+
+
+@app.cell
+def _(data, plt):
+    # plotting top policies in africa
+    def plot_top_policy_classes_continent():
+        # Count occurrences of each Policy class across all regions
+        policy_counts = data['Policy class'].value_counts()
+
+        # Get the top 10 Policy classes
+        top_policy_classes = policy_counts.head(10)
+
+        # Plotting
+        top_policy_classes.plot(kind='barh', figsize=(12, 6), title='Top 10 Policy Classes in Africa')
+        plt.xlabel('Number of instances')
+        plt.ylabel('Policy Class')
+        plt.tight_layout()
+        plt.show()
+
+    plot_top_policy_classes_continent()
+    return
+
+
+@app.cell
+def _(data, plt):
+    # showing the continental data for policy class in percentage in a circle
+
+    def plot_policy_class_distribution():
+        # Count occurrences of each Policy class
+        policy_counts = data['Policy class'].value_counts()
+
+        # Plotting
+        plt.figure(figsize=(10, 10))
+        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.title('Distribution of Policy Classes in Africa')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+    plot_policy_class_distribution()
+    return
+
+
+@app.cell
+def _(data, plt):
+    # top 10 focus areas that promotes youth employment
+
+    def plot_youth_employment_focus_areas():
+        # Filter data for policies that promote youth employment
+        youth_data = data[data['Policy promotes youth employment'] == 'Yes']
+
+        # Count occurrences of each Focus area in this subset
+        focus_counts = youth_data['Focus areas'].value_counts()
+
+        # Get the top 10 Focus areas
+        top_focus_areas = focus_counts.head(10)
+
+        # Plotting
+        top_focus_areas.plot(kind='barh', figsize=(12, 6), title='Top 10 Focus Areas Promoting Youth Employment')
+        plt.xlabel('Number of employment created')
+        plt.ylabel('Focus Area')
+        plt.tight_layout()
+        plt.show()
+
+    plot_youth_employment_focus_areas()
+    return
+
+
+@app.cell
+def _(data, plt):
+    #top focus areas promoting women employment
+
+    def plot_women_employment_focus_areas():
+        # Filter data for policies that promote youth employment
+        youth_data = data[data['Policy promotes women employment'] == 'Yes']
+
+        # Count occurrences of each Focus area in this subset
+        focus_counts = youth_data['Focus areas'].value_counts()
+
+        # Get the top 10 Focus areas
+        top_focus_areas = focus_counts.head(10)
+
+        # Plotting
+        top_focus_areas.plot(kind='barh', figsize=(12, 6), title='Top 10 Focus Areas Promoting women Employment')
+        plt.xlabel('Number of employment created')
+        plt.ylabel('Focus Area')
+        plt.tight_layout()
+        plt.show()
+
+    plot_women_employment_focus_areas()
+    return
+
+
+@app.cell
+def _(data, plt):
+    # top focus areas promoting disability
+
+    def plot_disability_employment_focus_areas():
+        # Filter data for policies that promote disability employment
+        disability_data = data[data['policy promotes employment of people with disabilities'] == 'Yes']
+
+        # Count occurrences of each Focus area in this subset
+        focus_counts = disability_data['Focus areas'].value_counts()
+
+        # Get the top 10 Focus areas
+        top_focus_areas = focus_counts.head(10)
+
+        # Plotting
+        top_focus_areas.plot(kind='barh', figsize=(12, 6), title='Top 10 Focus Areas Promoting Disability Employment')
+        plt.xlabel('Number of employment created')
+        plt.ylabel('Focus Area')
+        plt.tight_layout()
+        plt.show()
+
+    plot_disability_employment_focus_areas()
+    return
+
+
+@app.cell
+def _(data, plt):
+    # top focus areas that promote all 3
+
+    def plot_combined_employment_focus_areas():
+        # Filter data for policies that promote youth and women and disability
+        combined_data = data[
+            (data['Policy promotes youth employment'] == 'Yes') &
+            (data['Policy promotes women employment'] == 'Yes') &
+            (data['policy promotes employment of people with disabilities'] == 'Yes')]
+        # Count occurrences of each Focus area in this subset
+        focus_counts = combined_data['Focus areas'].value_counts()
+        # Get the top 10 Focus areas
+        top_focus_areas = focus_counts.head(10)
+        # Plotting
+        top_focus_areas.plot(kind='barh', figsize=(12, 6), title='Top 10 Focus Areas promoting all employments')
+        plt.xlabel('Number of employment created')
+        plt.ylabel('Focus Area')
+        plt.tight_layout()
+        plt.show()
+
+    plot_combined_employment_focus_areas()
     return
 
 
