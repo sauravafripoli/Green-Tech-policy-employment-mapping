@@ -202,8 +202,8 @@ def _():
     # Define the regions and their corresponding countries
     regions = {
          "North Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
-        "West Africa": ["Benin", "Burkina Faso", "Cabo Verde", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
-        "Central Africa": ["Burundi", "Cameroon", "Central African Republic", "Chad", "Democratic Republic of Congo", "Republic of Congo", "Equatorial Guinea", "Gabon", "Sao Tome and Principe"],
+        "West Africa": ["Benin", "Burkina Faso", "Cape Verde", "The Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
+        "Central Africa": ["Burundi", "Cameroon", "Central African Republic", "Chad", "Democratic Republic of Congo", "Republic of Congo", "Equatorial Guinea", "Gabon", "São Tomé and Príncipe"],
         "East Africa": ["Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Mauritius", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda"],
         "Southern Africa": ["Angola", "Botswana", "Eswatini", "Lesotho", "Malawi", "Mozambique", "Namibia", "South Africa", "Zambia", "Zimbabwe"],
     }
@@ -713,6 +713,26 @@ def _(data, plt):
         plt.show()
 
     plot_combined_employment_focus_areas()
+    return
+
+
+@app.cell
+def _(data, regions):
+    #check which countries are missing in regional among all the countries
+
+    len(set(data['Country name'].unique()) - set(sum(regions.values(), [])))
+    
+
+
+    return
+
+
+@app.cell
+def _(data, regions):
+    #print which are missing
+
+    missing_countries = set(data['Country name'].unique()) - set(sum(regions.values(), []))
+    missing_countries
     return
 
 
