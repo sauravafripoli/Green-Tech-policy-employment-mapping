@@ -34,6 +34,8 @@ const regionDefinitions = {
     "Southern Africa": ["Angola", "Botswana", "Eswatini", "Lesotho", "Malawi", "Mozambique", "Namibia", "South Africa", "Zambia", "Zimbabwe"],
 };
 
+// --- NEW: Color Scale for Regions ---
+let regionColorScale; // Declare globally
 
 // --- HELPER FUNCTION for single-select filter matching ---
 const filterMatches = (itemValue, selectedFilterValue) => {
@@ -147,7 +149,8 @@ function prepareRegionalData(allGeoData, allPolicyData) {
                 if (countryDetails["Policy promotes women employment"] === "Yes") aggregatedRegionDetails["Policy promotes women employment"] = true;
                 if (countryDetails["policy promotes employment of people with disabilities"] === "Yes") aggregatedRegionDetails["policy promotes employment of people with disabilities"] = true;
                 
-                aggregatedRegionDetails["total_documents"] += countryDetails["Government document"].length;
+                // --- Use the unique count of "Government document" for total_documents ---
+                aggregatedRegionDetails["total_documents"] = [...new Set(aggregatedRegionDetails["Government document"])].length;
                 aggregatedRegionDetails["countries"].push(countryName);
             }
         });
@@ -202,6 +205,24 @@ function prepareRegionalData(allGeoData, allPolicyData) {
             }
         });
         regionGeoData = { type: "FeatureCollection", features: mergedFeatures };
+
+        // --- NEW: Initialize the regionColorScale after regionDataMap is populated ---
+        const totalDocumentCounts = Object.values(regionDataMap)
+            .map(d => d.total_documents)
+            .filter(count => count > 0); // Only consider regions with documents for the scale
+
+        if (totalDocumentCounts.length > 0) {
+            const minDocs = d3.min(totalDocumentCounts);
+            const maxDocs = d3.max(totalDocumentCounts);
+
+            regionColorScale = d3.scaleQuantize()
+                .domain([minDocs, maxDocs])
+                .range(["#fef0d9", "#fdcd8f", "#fc8d59", "#e34a33", "#b30000"]); // Example color range (light to dark red/orange)
+        } else {
+            // Fallback if no regions have documents
+            regionColorScale = d3.scaleQuantize().domain([0, 1]).range(["#e5e7eb"]);
+        }
+
     } else {
         console.warn("GeoData is not a GeoJSON FeatureCollection or topojson.topology function is missing. Regional shapes cannot be merged. Display might be affected.");
         regionGeoData = { type: "FeatureCollection", features: [] }; 
@@ -235,7 +256,7 @@ function drawMap() {
         .data(dataToDraw, d => d.properties.name)
         .enter().append("path")
         .attr("class", "map-entity")
-        .attr("fill", d => dataMapToUse[d.properties.name] && dataMapToUse[d.properties.name]["Government document"].length > 0 ? "#9fa8da" : "#e5e7eb")
+        // Initial fill will be set by updateMap based on view
         .attr("stroke", "#ffffff")
         .attr("stroke-width", 1)
         .attr("d", path)
@@ -386,37 +407,6 @@ function drawMap() {
                     regionalFocusAreaCounts[fa] = (regionalFocusAreaCounts[fa] || 0) + 1;
                 });
                 
-                // // --- Use createCardContainer for Top Focus Areas ---
-                // const focusAreaCard = createCardContainer(d3.select("#doc-charts"));
-                // focusAreaCard.append("h5")
-                //     .style("margin-top", "0").text("Top Focus Areas:"); 
-                // const focusAreaList = focusAreaCard.append("ul")
-                //     .style("list-style-type", "none")
-                //     .style("padding-left", "0")
-                //     .style("word-break", "break-word"); // Added for list items
-                // Object.entries(regionalFocusAreaCounts)
-                //     .sort((a, b) => b[1] - a[1])
-                //     .slice(0, 10)
-                //     .forEach(([area, count]) => {
-                //         focusAreaList.append("li").text(`${area} (${count} mentions)`); // Updated text
-                //     });
-
-                // // --- Use createCardContainer for Top Policy Classes ---
-                // const policyClassCard = createCardContainer(d3.select("#doc-charts"));
-                // policyClassCard.append("h5")
-                //     .style("margin-top", "0").text("Top Policy Classes:");
-                // const policyClassList = policyClassCard.append("ul")
-                //     .style("list-style-type", "none")
-                //     .style("padding-left", "0")
-                //     .style("word-break", "break-word"); // Added for list items
-                
-                // Object.entries(regionalPolicyClassCounts)
-                //     .sort((a, b) => b[1] - a[1])
-                //     .slice(0, 10)
-                //     .forEach(([policyClass, count]) => {
-                //         policyClassList.append("li").text(`${policyClass} (${count} mentions)`); // Updated text
-                //     });
-
                 // Prepare data for charts (top 10, sorted)
                 const topFocusAreas = Object.entries(regionalFocusAreaCounts)
                     .sort((a, b) => b[1] - a[1])
@@ -521,7 +511,7 @@ function updateMap() {
     .attr("fill", d => {
         const details = dataMapToUse[d.properties.name];
         // FIX 1: Check Government Document length for data presence
-        if (!details || details["Government document"].length === 0) return "#e5e7eb";
+        if (!details || details["total_documents"] === 0) return "#e5e7eb"; // Gray for no data
 
         if (currentMapView === 'country') {
             // FIX 2: Iterate over Government Document to find matching documents
@@ -535,7 +525,8 @@ function updateMap() {
             });
             return hasMatchingDocument ? "#F1B434" : "#f0f0f0"; 
         } else {
-            return "#F1B434"; // Regions with data are always colored orange (as per previous consensus)
+            // --- NEW: Use regionColorScale for regions ---
+            return regionColorScale(details.total_documents);
         }
     });
 }
