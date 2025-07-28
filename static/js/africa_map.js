@@ -29,7 +29,7 @@ let policyData = null;
 const regionDefinitions = {
     "North Africa": ["Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara"],
     "West Africa": ["Benin", "Burkina Faso", "Cape Verde", "The Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Côte d'Ivoire", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo"],
-    "Central Africa": ["Burundi", "Cameroon", "Central African Republic", "Chad", "Democratic Republic of Congo", "Republic of Congo", "Equatorial Guinea", "Gabon", "São Tomé and Príncipe"],
+    "Central Africa": ["Burundi", "Cameroon", "Central African Republic", "Chad", "Democratic Republic of Congo", "Republic of Congo", "Equatorial Guinea", "Gabon", "São Tomé & Príncipe"],
     "East Africa": ["Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Mauritius", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda"],
     "Southern Africa": ["Angola", "Botswana", "Eswatini", "Lesotho", "Malawi", "Mozambique", "Namibia", "South Africa", "Zambia", "Zimbabwe"],
 };
@@ -426,6 +426,75 @@ function drawMap() {
 }
 
 
+/**
+ * Populates or updates the filter dropdowns based on the currently
+ * selected filters (excluding the filter being updated).
+ * @param {string} changedFilterId The ID of the filter that just changed (e.g., 'focusFilter'),
+ * or null if initializing all filters.
+ */
+function updateFilterOptions(changedFilterId = null) {
+    // Get current selections (before any changes are applied for this update cycle)
+    const currentFocus = d3.select("#focusFilter").property("value");
+    const currentClass = d3.select("#classFilter").property("value");
+
+    let availableFocusAreas = new Set();
+    let availablePolicyClasses = new Set();
+
+    // Iterate through all policy data entries to find relevant options
+    policyData.forEach(d => {
+        // A country's data is relevant if its documents match the *other* filter's selection
+        // For focus, check against currentClass. For class, check against currentFocus.
+
+        if (d["Government document"] && Array.isArray(d["Government document"])) {
+            d["Government document"].forEach((doc, i) => {
+                const docFocus = d["Focus areas"] ? d["Focus areas"][i] : null;
+                const docClass = d["Policy class"] ? d["Policy class"][i] : null;
+
+                // Check if this specific document entry matches the other filter's selection
+                const isFocusRelevant = (changedFilterId === 'focusFilter' || currentClass === 'all' || (docClass && filterMatches(docClass, currentClass)));
+                const isClassRelevant = (changedFilterId === 'classFilter' || currentFocus === 'all' || (docFocus && filterMatches(docFocus, currentFocus)));
+
+                if (isFocusRelevant && docFocus) {
+                    if (Array.isArray(docFocus)) {
+                        docFocus.forEach(f => availableFocusAreas.add(f));
+                    } else {
+                        availableFocusAreas.add(docFocus);
+                    }
+                }
+                if (isClassRelevant && docClass) {
+                     if (Array.isArray(docClass)) {
+                        docClass.forEach(c => availablePolicyClasses.add(c));
+                    } else {
+                        availablePolicyClasses.add(docClass);
+                    }
+                }
+            });
+        }
+    });
+
+    // Populate Focus Areas filter
+    const focusSelect = d3.select("#focusFilter");
+    focusSelect.selectAll("option").remove(); // Clear existing options
+    focusSelect.append("option").text("All").attr("value", "all");
+    Array.from(availableFocusAreas).sort().forEach(f => {
+        focusSelect.append("option").text(f).attr("value", f);
+    });
+    // Restore previous selection if it's still available, otherwise default to 'all'
+    focusSelect.property("value", Array.from(availableFocusAreas).includes(currentFocus) ? currentFocus : "all");
+
+
+    // Populate Policy Class filter
+    const classSelect = d3.select("#classFilter");
+    classSelect.selectAll("option").remove(); // Clear existing options
+    classSelect.append("option").text("All").attr("value", "all");
+    Array.from(availablePolicyClasses).sort().forEach(c => {
+        classSelect.append("option").text(c).attr("value", c);
+    });
+    // Restore previous selection if it's still available, otherwise default to 'all'
+    classSelect.property("value", Array.from(availablePolicyClasses).includes(currentClass) ? currentClass : "all");
+}
+
+
 // Fetch data and geo
 Promise.all([
   d3.json("/geo"),
@@ -436,22 +505,8 @@ Promise.all([
 
   policyData.forEach(d => dataMap[d.country] = d);
 
-  const focusSet = new Set();
-  const classSet = new Set();
-  policyData.forEach(d => {
-    if (d["Focus areas"]) d["Focus areas"].forEach(f => focusSet.add(f));
-    if (d["Policy class"]) d["Policy class"].forEach(c => classSet.add(c));
-  });
-
-  d3.select("#focusFilter").append("option").text("All").attr("value", "all");
-  Array.from(focusSet).sort().forEach(f => {
-    d3.select("#focusFilter").append("option").text(f).attr("value", f);
-  });
-  
-  d3.select("#classFilter").append("option").text("All").attr("value", "all");
-   Array.from(classSet).sort().forEach(c => {
-    d3.select("#classFilter").append("option").text(c).attr("value", c);
-  });
+  // Initial population of filters (before any changes)
+  updateFilterOptions(null); // Call with null to indicate initial load
 
   // Prepare regional data after country data is loaded
   prepareRegionalData(geoData, policyData);
@@ -464,6 +519,7 @@ Promise.all([
       resetSidebarAndDetails(); 
       drawMap(); 
       updateMap(); 
+      updateFilterOptions(null); // Re-populate filters for country view
   });
 
   d3.select("#view-region").on("click", function() {
@@ -473,15 +529,23 @@ Promise.all([
       resetSidebarAndDetails(); 
       drawMap(); 
       updateMap(); 
+      // Filters are disabled for region view, so no need to update options
   });
 
   // --- Filter change logic ---
-  d3.selectAll("#focusFilter, #classFilter").on("change", () => {
+  d3.select("#focusFilter").on("change", () => {
       selectedFocus = d3.select("#focusFilter").property("value"); 
-      selectedClass = d3.select("#classFilter").property("value");
       resetSidebarAndDetails(); 
+      updateFilterOptions('focusFilter'); // Pass the ID of the changed filter
       updateMap(); 
   });
+  d3.select("#classFilter").on("change", () => {
+      selectedClass = d3.select("#classFilter").property("value");
+      resetSidebarAndDetails(); 
+      updateFilterOptions('classFilter'); // Pass the ID of the changed filter
+      updateMap(); 
+  });
+
 
   // Initial draw and update
   drawMap(); 
@@ -517,7 +581,8 @@ function updateMap() {
             // FIX 2: Iterate over Government Document to find matching documents
             const hasMatchingDocument = details["Government document"].some((doc, i) => {
                 // Ensure the index 'i' is valid for associated arrays
-                if (i < details["Focus areas"].length && i < details["Policy class"].length) {
+                if (details["Focus areas"] && i < details["Focus areas"].length && 
+                    details["Policy class"] && i < details["Policy class"].length) {
                     return filterMatches(details["Focus areas"][i], selectedFocus) &&
                            filterMatches(details["Policy class"][i], selectedClass);
                 }
