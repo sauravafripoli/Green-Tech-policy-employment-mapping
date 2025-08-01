@@ -16,3 +16,8 @@ The main agendas are:
 
 
 ## How to run the project locally
+1. clone the project to your local repo
+2. open the repo and create a venv python -m venv venv
+3. open the venv source venv/bib/activate
+4. Install the requirements pip install requirements.txt
+5. then to run the project python app.py
