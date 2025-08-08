@@ -415,7 +415,13 @@ def _(data, plt):
 
         # Plotting
         plt.figure(figsize=(12, 11))
-        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        # Adjust font sizes and weight here
+        plt.pie(policy_counts, 
+                labels=policy_counts.index, 
+                autopct='%1.1f%%', 
+                startangle=140,
+                textprops={'fontsize': 11, 'fontweight':'bold'}, # This controls the labels
+                wedgeprops={'linewidth': 1, 'edgecolor': 'white'})
         plt.title('Distribution of Policy Strategy Classes in North Africa')
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
@@ -444,7 +450,12 @@ def _(data, plt):
 
         # Plotting
         plt.figure(figsize=(10, 10))
-        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.pie(policy_counts, 
+                labels=policy_counts.index, 
+                autopct='%1.1f%%', 
+                startangle=140,
+                textprops={'fontsize': 11, 'fontweight':'bold'}, # This controls the labels
+                wedgeprops={'linewidth': 1, 'edgecolor': 'white'})
         plt.title('Distribution of Policy Strategy Classes in West Africa')
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
@@ -473,7 +484,12 @@ def _(data, plt):
 
         # Plotting
         plt.figure(figsize=(12, 11))
-        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.pie(policy_counts, 
+                labels=policy_counts.index, 
+                autopct='%1.1f%%', 
+                startangle=140,
+                textprops={'fontsize': 11, 'fontweight':'bold'}, # This controls the labels
+                wedgeprops={'linewidth': 1, 'edgecolor': 'white'})
         plt.title('Distribution of Policy Strategy Classes in Central Africa')
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
@@ -502,7 +518,12 @@ def _(data, plt):
 
         # Plotting
         plt.figure(figsize=(10, 10))
-        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.pie(policy_counts, 
+                labels=policy_counts.index, 
+                autopct='%1.1f%%', 
+                startangle=140,
+                textprops={'fontsize': 11, 'fontweight':'bold'}, # This controls the labels
+                wedgeprops={'linewidth': 1, 'edgecolor': 'white'})
         plt.title('Distribution of Policy Strategy Classes in East Africa')
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
@@ -531,7 +552,12 @@ def _(data, plt):
 
         # Plotting
         plt.figure(figsize=(10, 10))
-        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.pie(policy_counts, 
+                labels=policy_counts.index, 
+                autopct='%1.1f%%', 
+                startangle=140,
+                textprops={'fontsize': 11, 'fontweight':'bold'}, # This controls the labels
+                wedgeprops={'linewidth': 1, 'edgecolor': 'white'})
         plt.title('Distribution of Policy Strategy Classes in Southern Africa')
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
@@ -638,7 +664,12 @@ def _(data, plt):
 
         # Plotting
         plt.figure(figsize=(10, 10))
-        plt.pie(policy_counts, labels=policy_counts.index, autopct='%1.1f%%', startangle=140)
+        plt.pie(policy_counts, 
+                labels=policy_counts.index, 
+                autopct='%1.1f%%', 
+                startangle=140,
+                textprops={'fontsize': 11, 'fontweight':'bold'}, # This controls the labels
+                wedgeprops={'linewidth': 1, 'edgecolor': 'white'})
         plt.title('Distribution of Policy Strategy Classes in Africa')
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
@@ -699,6 +730,7 @@ def _(data, plt):
 
 @app.cell
 def _(data, plt):
+
     # top focus areas promoting disability
 
     def plot_disability_employment_focus_areas():
@@ -1124,6 +1156,16 @@ def _(df_counts, employment_columns, np, pd, plt, regions, title_mapping):
     plt.show()
     plt.close(fig_stacked_chart) # Close the figure to free memory
 
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
     return
 
 
