@@ -1160,7 +1160,55 @@ def _(df_counts, employment_columns, np, pd, plt, regions, title_mapping):
 
 
 @app.cell
-def _():
+def _(df_counts):
+    # ploting how many countries promote women, youth and disability employment in whole africa 
+
+    df_counts.head()
+    
+    return
+
+
+@app.cell
+def _(df_counts):
+    #in dataframe df_counts change all number except 0 to 1
+
+    df_counts_binary = df_counts.copy()
+    df_counts_binary[df_counts_binary > 0] = 1
+
+    df_counts_binary
+
+    return (df_counts_binary,)
+
+
+@app.cell
+def _(df_counts_binary, plt):
+
+
+    # Get the count for each employment type
+    employment_counts = df_counts_binary.sum()
+    print(employment_counts)
+
+    # Change the index to the new, readable labels
+    employment_counts.index = ['Youth', 'Women', 'Disability']
+
+    # Plot the count per column
+    def plot_employment_counts(df_counts):
+        """
+        Plots the count of countries
+        promoting each type of employment.
+        """
+        plt.figure(figsize=(10, 6))
+        df_counts.plot(kind='bar', color=['forestgreen', 'indianred', 'steelblue'])
+        plt.title('Number of Countries Promoting Employment Types in Africa', fontsize=16, fontweight='bold')
+        plt.xlabel('Employment Type', fontsize=14)
+        plt.ylabel('Number of Countries', fontsize=14)
+        plt.xticks(rotation=0, ha='center') # Set rotation to 0
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        plt.savefig('employment_counts_readable_labels.png')
+        plt.show()
+
+    plot_employment_counts(employment_counts)
     return
 
 
