@@ -312,3 +312,30 @@ select:focus {
 #filters label:has(+ select:disabled) { /* Target label when its sibling select is disabled */
     color: #9ca3af;
 }
+
+@media (max-width: 768px) {
+  /* Stack filters and content vertically */
+  #filters,
+  #map-and-sidebar-container {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  /* Make all elements full width */
+  #filters div,
+  #map,
+  #sidebar {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Adjust map-specific styles */
+  #map {
+    height: 350px; /* Set a fixed height for the map on mobile */
+  }
+
+  /* Make filter selects full width */
+  select {
+    width: 100%;
+  }
+}
