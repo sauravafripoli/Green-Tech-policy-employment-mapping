@@ -1,14 +1,18 @@
-const width = 960, height = 600;
+let width, height; // Declared, but not initialized
+// ...
+// Get dimensions dynamically inside drawMap()
+const mapContainer = d3.select("#map").node();
+width = mapContainer.clientWidth;
+height = mapContainer.clientHeight;
+
 
 const svg = d3.select("#map")
   .append("svg")
   .attr("width", width)
   .attr("height", height);
   
-const projection = d3.geoMercator()
-  .center([20, 0])
-  .scale(400)
-  .translate([width / 2, height / 2]);
+const projection = d3.geoMercator();
+
 
 const path = d3.geoPath().projection(projection);
 
@@ -233,6 +237,13 @@ function prepareRegionalData(allGeoData, allPolicyData) {
 function drawMap() {
     svg.selectAll("path").remove();
 
+  const mapContainer = d3.select("#map").node();
+  width = mapContainer.clientWidth;
+  height = mapContainer.clientHeight;
+  
+  // Use the dynamic dimensions to fit the projection
+  projection.fitSize([width, height], geoData);
+
     let dataToDraw;
     let dataMapToUse;
 
@@ -257,6 +268,7 @@ function drawMap() {
         .enter().append("path")
         .attr("class", "map-entity")
         // Initial fill will be set by updateMap based on view
+        .attr("fill", "#e5e7eb")
         .attr("stroke", "#ffffff")
         .attr("stroke-width", 1)
         .attr("d", path)
@@ -423,6 +435,7 @@ function drawMap() {
                 renderBarChart(d3.select("#doc-charts"), topPolicyClasses, "Top Policy Classes");
             }
         });
+        updateMap();
 }
 
 
@@ -820,3 +833,4 @@ function renderBarChart(parentSelection, data, titleText) {
         .style("fill", "#475569")
         .text(d => d.value);
 }
+window.addEventListener('resize', drawMap);

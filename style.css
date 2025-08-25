@@ -86,8 +86,8 @@ select:focus {
 /* Main Map AND Sidebar Section */
 #map-and-sidebar-container { /* Renamed from #main-content-container */
   display: flex;
-  height: calc(100vh - 250px); /* Adjusted height to accommodate the fixed header/filters better */
-  max-height: 800px;
+  min-height: calc(100vh - 250px); /* Use min-height to allow content to grow */
+  max-height: none; /* Allow the container to grow naturally */
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
