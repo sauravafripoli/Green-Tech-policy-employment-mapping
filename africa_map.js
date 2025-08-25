@@ -510,8 +510,8 @@ function updateFilterOptions(changedFilterId = null) {
 
 // Fetch data and geo
 Promise.all([
-  d3.json("data/africa.geojson"),
-  d3.json("data/africa_policy_data.json")
+  d3.json("/data/africa.geojson"),
+  d3.json("/data/africa_policy_data.json")
 ]).then(([fetchedGeoData, fetchedPolicyData]) => { 
   geoData = fetchedGeoData;
   policyData = fetchedPolicyData;
